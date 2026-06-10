@@ -1,0 +1,32 @@
+[
+  {
+    "id": "campaign_1781112531572_5vk4n",
+    "audienceName": "High Value Customers",
+    "audienceSize": 71,
+    "channel": "WhatsApp",
+    "goal": "Increase Repeat Purchases",
+    "strategy": "Personalized Engagement",
+    "recommendedOffer": "Exclusive 10% Discount on Next Purchase",
+    "title": "High Value Customer Retention",
+    "subject": "",
+    "message": "Hey *valued customer* 👋, we noticed you're from *Delhi* 📍! As a token of appreciation for your ₹18171 spend with us, enjoy *10% off* on your next order 🎁. Use code: DELHI10 at checkout 🛍️",
+    "cta": "Shop Now and Get 10% Off",
+    "aiReasoning": "The audience has a high average spend and is concentrated in a single city, indicating a potential for loyalty and repeat business. A personalized offer and exclusive discount can motivate them to make another purchase, increasing repeat purchases and customer retention.",
+    "qualityScore": 90,
+    "strengths": [
+      "Personalized message",
+      "Exclusive offer",
+      "Clear CTA"
+    ],
+    "improvements": [
+      "Track customer interactions to further personalize the message"
+    ],
+    "status": "Draft",
+    "createdAt": "2026-06-10T17:28:51.572Z",
+    "sent": 0,
+    "delivered": 0,
+    "opened": 0,
+    "clicked": 0,
+    "purchased": 0
+  }
+]
