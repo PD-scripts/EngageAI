@@ -7,6 +7,7 @@ const excelParser = require('./services/excelParser');
 
 const customerRoutes = require('./routes/customerRoutes');
 const orderRoutes = require('./routes/orderRoutes');
+const queryRoutes = require('./routes/queryRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -23,6 +24,7 @@ app.get('/', (req, res) => {
 // Mount modular routes
 app.use('/api/customers', customerRoutes);
 app.use('/api/orders', orderRoutes);
+app.use('/api/query', queryRoutes);
 
 // Start server
 app.listen(PORT, () => {
