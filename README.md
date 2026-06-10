@@ -1,133 +1,163 @@
-# Xeno CRM - Stage 1 (Foundation)
+# AudiencePilot (Xeno CRM)
 
-Welcome to **Xeno CRM**, an AI-Native Mini CRM designed specifically for customer engagement and marketing automation. This platform is tailored for consumer brands to import shopper data, build custom audiences, create marketing campaigns, and leverage AI to make optimal marketing decisions.
+AudiencePilot is an AI-Native CRM and Marketing Automation Platform designed for consumer brands. It enables marketers to ingest shopper databases, dynamically query and segment customer lists, build audiences using natural language, and generate optimized multi-channel marketing campaigns using AI.
 
-> [!NOTE]
-> This is **Stage 1: Foundation**. It establishes the core project structure, frontend routing, layout architecture, and backend configuration needed to support subsequent stages (data import, segmentation, and AI copilot execution).
+This project covers the full implementation of **Stages 1 through 5**.
 
 ---
 
-## Architecture Overview
+## Core Features Implemented
 
-Xeno CRM uses a decoupled client-server architecture:
+### 📊 Stage 2: Excel Ingestion & Customer Views
+- Automatically parses and caches customer lists and order history from Excel sheets (`Xeno_CRM_Dummy_Data.xlsx`) on server startup.
+- Full API endpoints for customer profiles, search, filtering, and order lists.
 
-```text
- project-root/
- ├── frontend/       # React (Vite) Single Page Application
- └── backend/        # Node.js + Express API server
-```
+### ⚙️ Stage 3: Dynamic JSON Query Engine
+- Custom, type-aware filtering engine matching database fields (`TotalSpend`, `LastPurchaseDays`, `TotalOrders`, `City`, etc.) using strict logical `AND` query arrays.
 
-### Stack
-* **Frontend:** React, Vite, React Router v6, Tailwind CSS v4, Axios
-* **Backend:** Node.js, Express, Cors, Dotenv
-* **Database / Data Source:** Excel sheets (e.g., `Xeno_CRM_Dummy_Data.xlsx`)
+### 🤖 Stage 4: AI Audience Builder
+- Translates natural language requests (e.g., *"Find customers from Delhi who spent more than 10,000"*) into structured JSON query filters using Groq.
+- Renders the resulting customer match list dynamically in the client dashboard.
+
+### 🚀 Stage 5: AI Campaign Copilot (Latest)
+- **Prompt-Based Campaign Strategy**: User describes the goal (e.g. *"Create a WhatsApp campaign for high-value customers to increase repeat purchases"*).
+- **AI Parameter Extraction**: Auto-extracts target audience segments, communication channels (WhatsApp, Email, SMS), and goals directly from the prompt.
+- **Privacy-Safe Stats Pipeline**: Pre-calculates aggregated audience metrics (customer count, average spend, average orders, top city) and passes *only* these metrics to the LLM (no emails, phone numbers, or raw customer records leave your server).
+- **Circular Quality Score & Feedback**: AI generates a quality score (0-100) along with detailed strengths and recommended improvements.
+- **MongoDB Persistence**: Full MongoDB database integration using Mongoose models to persist and manage campaign drafts.
+
+---
+
+## Technology Stack
+
+- **Frontend**: React (Vite), React Router v6, Tailwind CSS v4, Axios
+- **Backend**: Node.js, Express, Mongoose, Groq SDK, XLSX Reader, CORS, Dotenv
+- **Database**: MongoDB (Mongoose Schema definition) & Excel sheet cache
 
 ---
 
 ## Folder Structure
 
-The project has been organized with simplicity and interview readability in mind:
-
 ```text
-project-root/
+AudiencePilot/
 │
-├── frontend/
+├── frontend/                     # React (Vite SPA Client)
 │   ├── src/
 │   │   ├── components/
-│   │   │   ├── Sidebar.jsx      # Left navigation menu with active route highlighting
-│   │   │   ├── Navbar.jsx       # Simple top header bar
-│   │   │   └── Layout.jsx       # Page structure template (sidebar + navbar + content)
+│   │   │   ├── Sidebar.jsx       # Left navigation with active route highlights
+│   │   │   ├── Navbar.jsx        # Top welcome header
+│   │   │   └── Layout.jsx        # Layout shell (Sidebar + Navbar + Content)
 │   │   │
 │   │   ├── pages/
-│   │   │   ├── Dashboard.jsx    # General campaign metrics placeholder
-│   │   │   ├── Customers.jsx    # Shopper list placeholder (Stage 2)
-│   │   │   └── AICopilot.jsx    # AI Audience builder placeholder (Stage 4)
+│   │   │   ├── Dashboard.jsx     # General campaign status summary
+│   │   │   ├── Customers.jsx     # Shoppers database directory with search & filters
+│   │   │   ├── CustomerDetails.jsx # Detailed profile view & order history
+│   │   │   ├── Orders.jsx        # Orders log directory
+│   │   │   ├── QueryTester.jsx   # Testing query engine conditions
+│   │   │   ├── AICopilot.jsx     # AI Audience builder (Stage 4)
+│   │   │   └── Campaigns.jsx     # AI Campaign Copilot & Editor (Stage 5)
 │   │   │
 │   │   ├── routes/
-│   │   │   └── AppRoutes.jsx    # Routing configurations using React Router
+│   │   │   └── AppRoutes.jsx     # Routing table configuration
 │   │   │
-│   │   ├── App.jsx              # Wraps routes with BrowserRouter
-│   │   ├── main.jsx             # React entry point
-│   │   └── index.css            # Tailwind CSS configurations & theme colors
+│   │   ├── App.jsx
+│   │   ├── main.jsx
+│   │   └── index.css             # Tailwind 4 configurations and custom colors
 │   │
-│   ├── vite.config.js
 │   └── package.json
 │
-├── backend/
+├── backend/                      # Express REST API Server
 │   ├── src/
-│   │   └── server.js            # Express server entry point
+│   │   ├── controllers/
+│   │   │   ├── customerController.js # Handles customers listing, details, paging
+│   │   │   ├── orderController.js    # Handles order logs
+│   │   │   ├── queryController.js    # Direct query engine gateway
+│   │   │   ├── aiController.js       # AI Audience Builder compiler
+│   │   │   └── campaignController.js # MongoDB campaign planner & registry
+│   │   │
+│   │   ├── models/
+│   │   │   └── Campaign.js       # Mongoose schema model for MongoDB
+│   │   │
+│   │   ├── routes/
+│   │   │   ├── customerRoutes.js
+│   │   │   ├── orderRoutes.js
+│   │   │   ├── queryRoutes.js
+│   │   │   ├── aiRoutes.js
+│   │   │   └── campaignRoutes.js  # Campaign strategy endpoints
+│   │   │
+│   │   ├── services/
+│   │   │   ├── excelParser.js    # Excel sheet parsing service
+│   │   │   ├── queryEngine.js    # Stage 3 dynamic JSON logical filter engine
+│   │   │   ├── aiService.js      # Groq NLP translation model
+│   │   │   └── campaignAiService.js # Campaign strategy & copywriter model
+│   │   │
+│   │   ├── utils/
+│   │   │   └── excelReader.js    # Helper wrapping xlsx parses
+│   │   │
+│   │   └── server.js             # Express server and DB connections
 │   │
 │   ├── data/
-│   │   └── Xeno_CRM_Dummy_Data.xlsx  # Generated Excel dummy data
+│   │   └── Xeno_CRM_Dummy_Data.xlsx # Ingested Excel source file
 │   │
+│   ├── .env                      # Local server configuration
 │   └── package.json
 │
-└── README.md
+└── .gitignore                    # Shared untracked file configurations
 ```
 
 ---
 
 ## Installation & Setup
 
-### Prerequisites
-* [Node.js](https://nodejs.org/) (v18.0.0 or higher recommended)
-* `npm` (packaged with Node.js)
+### 1. Prerequisites
+- **Node.js**: `v18.0.0` or higher
+- **MongoDB**: A running MongoDB instance (Local or MongoDB Atlas)
+- **Groq API Key**: Get one from the [Groq Console](https://console.groq.com/)
 
-### 1. Clone & Navigate
-Navigate to the root directory of the project:
+### 2. Clone and Install Dependencies
+Navigate into the root directory:
 ```bash
-cd crm2
-```
-
-### 2. Backend Setup
-Navigate into the `backend` directory, install packages, and initialize:
-```bash
+# Install backend dependencies
 cd backend
 npm install
-```
 
-### 3. Frontend Setup
-Navigate into the `frontend` directory and install packages:
-```bash
+# Install frontend dependencies
 cd ../frontend
 npm install
+```
+
+### 3. Environment Configurations
+Create a `.env` file inside the `backend` folder:
+```env
+PORT=5000
+GROQ_API_KEY=YOUR_GROQ_API_KEY
+MONGODB_URI=mongodb+srv://<username>:<password>@cluster.mongodb.net/audiencepilot?appName=CompleteCoding
 ```
 
 ---
 
 ## Running the Application
 
-### Start the Backend Server
-From the `backend` folder, run the following to start the Express server (runs on port `5000` by default):
+### Start the Backend API Server
+From the `backend` folder:
 ```bash
 npm run dev
 ```
-Verify it is running by visiting [http://localhost:5000/](http://localhost:5000/). You should see:
-```json
-{
-  "message": "Xeno CRM Backend Running"
-}
-```
+On success, you will see logs confirming:
+- Excel database parsed (e.g., `Loaded 200 customers...`)
+- Server running on port `5000`
+- MongoDB database connection established (`Connected to MongoDB`)
 
 ### Start the Frontend Client
-From the `frontend` folder, run the following to start the Vite development server:
+From the `frontend` folder:
 ```bash
 npm run dev
 ```
-Open the local server URL printed in the terminal (usually [http://localhost:5173/](http://localhost:5173/)) to access the CRM shell in your browser.
+Open [http://localhost:5173/](http://localhost:5173/) in your web browser to access the AudiencePilot application.
 
 ---
 
-## Design Choices & Theme
-The user interface implements a professional, clean theme designed for clarity:
-* **Background:** `#f8fafc` (slate-50) for contrast with cards
-* **Primary color:** `#2563eb` (blue-600) for active navigation and focal points
-* **Cards:** `#ffffff` (white) with subtle borders
-* **Borders:** `#e5e7eb` (slate-200) for clean dividing lines
-
----
-
-## Future Stages (Roadmap)
-* **Stage 2: Customer Data Import** - Implement parsing of `Xeno_CRM_Dummy_Data.xlsx` to render shopper tables.
-* **Stage 3: Campaign Builder** - Add features to define target cohorts and draft marketing content.
-* **Stage 4: AI Copilot Integration** - Integrate with Groq to allow marketers to speak to the CRM in plain English to build custom segments.
+## Interview Highlights (Development Philosophy)
+- **Modular & Decoupled Design**: Clear boundaries between query engines, AI parsers, and data storage.
+- **PII Leakage Prevention**: AI only receives aggregated statistics (count, spends, averages, locations) to build strategies. Shopper phone numbers, names, and emails are strictly processed locally on your server.
+- **Zero Redux/Context Overkill**: Simple React hooks, functional components, and standard Axios requests are used for high readability, easy debugging, and simple interview explanations.
