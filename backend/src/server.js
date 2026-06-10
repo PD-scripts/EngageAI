@@ -1,6 +1,17 @@
 const express = require('express');
 const cors = require('cors');
+const mongoose = require('mongoose');
 require('dotenv').config({ override: true });
+
+// Connect to MongoDB
+const mongoUri = process.env.MONGODB_URI;
+if (!mongoUri) {
+  console.warn('[Database Warning] MONGODB_URI is not defined in backend/.env');
+} else {
+  mongoose.connect(mongoUri)
+    .then(() => console.log('[Database] Connected to MongoDB.'))
+    .catch(err => console.error('[Database Error] Failed to connect to MongoDB:', err.message));
+}
 
 // Load in-memory database parser
 const excelParser = require('./services/excelParser');

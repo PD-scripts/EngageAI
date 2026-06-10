@@ -1,10 +1,7 @@
-const fs = require('fs');
-const path = require('path');
 const excelParser = require('../services/excelParser');
 const queryEngine = require('../services/queryEngine');
 const campaignAiService = require('../services/campaignAiService');
-
-const CAMPAIGNS_FILE = path.join(__dirname, '../data/campaigns.json');
+const Campaign = require('../models/Campaign');
 
 const AUDIENCES_MAP = {
   'High Value Customers': [{ field: 'TotalSpend', operator: '>', value: 10000 }],
@@ -13,36 +10,6 @@ const AUDIENCES_MAP = {
   'Frequent Buyers': [{ field: 'TotalOrders', operator: '>', value: 5 }],
   'All Customers': []
 };
-
-function initCampaignsStore() {
-  const dir = path.dirname(CAMPAIGNS_FILE);
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
-  }
-  if (!fs.existsSync(CAMPAIGNS_FILE)) {
-    fs.writeFileSync(CAMPAIGNS_FILE, JSON.stringify([], null, 2), 'utf-8');
-  }
-}
-
-function readCampaigns() {
-  initCampaignsStore();
-  try {
-    const data = fs.readFileSync(CAMPAIGNS_FILE, 'utf-8');
-    return JSON.parse(data);
-  } catch (error) {
-    console.error('Error reading campaigns.json:', error);
-    return [];
-  }
-}
-
-function writeCampaigns(campaigns) {
-  initCampaignsStore();
-  try {
-    fs.writeFileSync(CAMPAIGNS_FILE, JSON.stringify(campaigns, null, 2), 'utf-8');
-  } catch (error) {
-    console.error('Error writing campaigns.json:', error);
-  }
-}
 
 function calculateAudienceSummary(audienceName) {
   const customers = excelParser.getCustomers();
@@ -154,10 +121,7 @@ async function saveCampaign(req, res) {
       return res.status(400).json({ error: "Missing required fields to save campaign" });
     }
 
-    const campaigns = readCampaigns();
-
-    const newCampaign = {
-      id: `campaign_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+    const newCampaign = new Campaign({
       audienceName,
       audienceSize: Number(audienceSize) || 0,
       channel,
@@ -173,22 +137,20 @@ async function saveCampaign(req, res) {
       strengths: Array.isArray(strengths) ? strengths : [],
       improvements: Array.isArray(improvements) ? improvements : [],
       status: 'Draft',
-      createdAt: new Date().toISOString(),
       
-      // Future-proofing placeholders
+      // Future metrics placeholders
       sent: 0,
       delivered: 0,
       opened: 0,
       clicked: 0,
       purchased: 0
-    };
+    });
 
-    campaigns.push(newCampaign);
-    writeCampaigns(campaigns);
+    await newCampaign.save();
 
     res.status(201).json(newCampaign);
   } catch (error) {
-    console.error('Error saving campaign:', error);
+    console.error('Error saving campaign to MongoDB:', error);
     res.status(500).json({ error: "Internal Server Error saving campaign" });
   }
 }
@@ -197,13 +159,12 @@ async function saveCampaign(req, res) {
  * GET /api/campaigns
  * Lists all campaigns.
  */
-function getCampaigns(req, res) {
+async function getCampaigns(req, res) {
   try {
-    const campaigns = readCampaigns();
-    const sorted = [...campaigns].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-    res.json(sorted);
+    const campaigns = await Campaign.find().sort({ createdAt: -1 });
+    res.json(campaigns);
   } catch (error) {
-    console.error('Error getting campaigns:', error);
+    console.error('Error getting campaigns from MongoDB:', error);
     res.status(500).json({ error: "Internal Server Error fetching campaigns" });
   }
 }
