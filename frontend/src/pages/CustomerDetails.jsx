@@ -104,6 +104,12 @@ const CustomerDetails = () => {
               <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Days Since Last Purchase</p>
               <p className="text-slate-700 font-medium mt-1">{customer.LastPurchaseDays} days</p>
             </div>
+            <div>
+              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">First Time Buyer</p>
+              <p className="text-slate-700 font-medium mt-1">
+                {customer.IsFirstTimeBuyer === true || String(customer.IsFirstTimeBuyer).toLowerCase() === 'true' ? 'Yes' : 'No'}
+              </p>
+            </div>
           </div>
         </div>
 
