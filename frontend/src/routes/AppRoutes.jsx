@@ -7,6 +7,7 @@ import CustomerDetails from '../pages/CustomerDetails';
 import Orders from '../pages/Orders';
 import QueryTester from '../pages/QueryTester';
 import AICopilot from '../pages/AICopilot';
+import Campaigns from '../pages/Campaigns';
 
 const AppRoutes = () => {
   return (
@@ -18,6 +19,7 @@ const AppRoutes = () => {
         <Route path="orders" element={<Orders />} />
         <Route path="query-tester" element={<QueryTester />} />
         <Route path="ai-copilot" element={<AICopilot />} />
+        <Route path="campaigns" element={<Campaigns />} />
         {/* Fallback route */}
         <Route path="*" element={<Dashboard />} />
       </Route>

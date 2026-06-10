@@ -7,7 +7,8 @@ const Sidebar = () => {
     { name: 'Customers', path: '/customers' },
     { name: 'Orders', path: '/orders' },
     { name: 'Query Tester', path: '/query-tester' },
-    { name: 'AI Copilot', path: '/ai-copilot' }
+    { name: 'AI Copilot', path: '/ai-copilot' },
+    { name: 'Campaigns', path: '/campaigns' }
   ];
 
   return (
