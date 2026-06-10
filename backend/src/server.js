@@ -2,6 +2,12 @@ const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
 
+// Load in-memory database parser
+const excelParser = require('./services/excelParser');
+
+const customerRoutes = require('./routes/customerRoutes');
+const orderRoutes = require('./routes/orderRoutes');
+
 const app = express();
 const PORT = process.env.PORT || 5000;
 
@@ -14,7 +20,12 @@ app.get('/', (req, res) => {
   res.json({ message: "Xeno CRM Backend Running" });
 });
 
+// Mount modular routes
+app.use('/api/customers', customerRoutes);
+app.use('/api/orders', orderRoutes);
+
 // Start server
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
+
