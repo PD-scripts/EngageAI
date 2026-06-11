@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const excelParser = require('../services/excelParser');
 const queryEngine = require('../services/queryEngine');
 const campaignAiService = require('../services/campaignAiService');
@@ -6,6 +7,8 @@ const Campaign = require('../models/Campaign');
 const AUDIENCES_MAP = {
   'High Value Customers': [{ field: 'TotalSpend', operator: '>', value: 10000 }],
   'Delhi Customers': [{ field: 'City', operator: '=', value: 'Delhi' }],
+  'Mumbai Customers': [{ field: 'City', operator: '=', value: 'Mumbai' }],
+  'Pune Customers': [{ field: 'City', operator: '=', value: 'Pune' }],
   'Inactive Customers': [{ field: 'LastPurchaseDays', operator: '>', value: 90 }],
   'Frequent Buyers': [{ field: 'TotalOrders', operator: '>', value: 5 }],
   'All Customers': []
@@ -44,6 +47,13 @@ function calculateAudienceSummary(audienceName) {
     }
   }
 
+  // Fallback to the parsed audience city name if no users match but it has a specific city segment
+  if (topCity === 'N/A') {
+    if (audienceName.includes('Mumbai')) topCity = 'Mumbai';
+    else if (audienceName.includes('Delhi')) topCity = 'Delhi';
+    else if (audienceName.includes('Pune')) topCity = 'Pune';
+  }
+
   return {
     totalCustomers,
     averageSpend,
@@ -64,14 +74,11 @@ async function generateCampaign(req, res) {
       return res.status(400).json({ error: "Missing 'prompt' string in request body" });
     }
 
-    // 1. Extract campaign metadata parameters using Groq
     const parsedParams = await campaignAiService.parseCampaignPrompt(prompt);
     const { audienceName, channel, goal } = parsedParams;
 
-    // 2. Fetch audience dynamic statistics (Security: no PII leaked)
     const summary = calculateAudienceSummary(audienceName);
 
-    // 3. Generate campaign strategies, messaging and score
     const campaignContent = await campaignAiService.generateCampaign({
       audienceName,
       audienceSize: summary.totalCustomers,
@@ -80,7 +87,6 @@ async function generateCampaign(req, res) {
       audienceSummary: summary
     });
 
-    // 4. Combine into final response
     res.json({
       audienceName,
       audienceSize: summary.totalCustomers,
@@ -100,6 +106,12 @@ async function generateCampaign(req, res) {
  */
 async function saveCampaign(req, res) {
   try {
+    if (mongoose.connection.readyState !== 1) {
+      return res.status(503).json({ 
+        error: "MongoDB connection is offline. Please ensure your IP is whitelisted in MongoDB Atlas Network Access." 
+      });
+    }
+
     const {
       audienceName,
       audienceSize,
@@ -138,7 +150,6 @@ async function saveCampaign(req, res) {
       improvements: Array.isArray(improvements) ? improvements : [],
       status: 'Draft',
       
-      // Future metrics placeholders
       sent: 0,
       delivered: 0,
       opened: 0,
@@ -161,6 +172,12 @@ async function saveCampaign(req, res) {
  */
 async function getCampaigns(req, res) {
   try {
+    if (mongoose.connection.readyState !== 1) {
+      return res.status(503).json({ 
+        error: "MongoDB connection is offline. Please ensure your IP is whitelisted in MongoDB Atlas Network Access." 
+      });
+    }
+
     const campaigns = await Campaign.find().sort({ createdAt: -1 });
     res.json(campaigns);
   } catch (error) {

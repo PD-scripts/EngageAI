@@ -29,6 +29,8 @@ Given a user prompt, extract the target audience segment, communication channel,
 Map the audienceName to one of these exact values:
 - "High Value Customers"
 - "Delhi Customers"
+- "Mumbai Customers"
+- "Pune Customers"
 - "Inactive Customers"
 - "Frequent Buyers"
 - "All Customers" (use this if not specified or not matching others)
