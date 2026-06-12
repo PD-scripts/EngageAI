@@ -1,18 +1,77 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap');
 @import "tailwindcss";
 
 @theme {
-  --color-primary: #2563eb;
-  --color-background: #f8fafc;
-  --color-card: #ffffff;
-  --color-border: #e5e7eb;
+  /* Quiet Luxury Palette Config */
+  --color-background: #F8F6F2;
+  --color-sidebar: #111827;
+  --color-card: #FFFFFF;
+  --color-primary: #8B7355;
+  --color-secondary: #B89B72;
+  --color-border: #E5E7EB;
+  --color-text-main: #1F2937;
+  --color-text-muted: #6B7280;
+  
+  --color-success: #2D6A4F;
+  --color-warning: #B7791F;
+  --color-danger: #B91C1C;
+  
+  --font-sans: 'Outfit', ui-sans-serif, system-ui, sans-serif;
 }
 
-/* Custom resets or base styles if needed */
+/* Custom Base Styles */
 html, body, #root {
   margin: 0;
   padding: 0;
   height: 100%;
-  background-color: var(--color-background);
-  color: #1e293b; /* slate-800 */
-  font-family: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  width: 100%;
+  background-color: #F8F6F2; /* matches background */
+  color: #1F2937; /* matches text-main */
+  font-family: 'Outfit', ui-sans-serif, system-ui, sans-serif;
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Smooth custom premium scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #E5E7EB;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #B89B72;
+}
+
+/* Custom Glassmorphism Nav Style */
+.glass-nav {
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(229, 231, 235, 0.5);
+}
+
+/* Glowing animations for the AI active badges */
+@keyframes pulse-gold {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(139, 115, 85, 0.4);
+  }
+  50% {
+    transform: scale(1.15);
+    box-shadow: 0 0 10px 4px rgba(139, 115, 85, 0.2);
+  }
+}
+
+.ai-glow {
+  animation: pulse-gold 2s infinite ease-in-out;
 }

@@ -31,6 +31,7 @@ Map the audienceName to one of these exact values:
 - "Delhi Customers"
 - "Mumbai Customers"
 - "Pune Customers"
+- "Hyderabad Customers"
 - "Inactive Customers"
 - "Frequent Buyers"
 - "All Customers" (use this if not specified or not matching others)
@@ -56,13 +57,19 @@ Prompt: Write a friendly WhatsApp message to our High Value Customers to get the
 Output: {"audienceName":"High Value Customers","channel":"WhatsApp","goal":"Increase Repeat Purchases"}
 `;
 
-const GENERATE_SYSTEM_PROMPT = `You are a professional AI Campaign Strategist and Marketing Copywriter.
-Generate an optimized marketing campaign based on the provided audience metadata, campaign goal, and communication channel.
+const GENERATE_SYSTEM_PROMPT = `You are an elite, highly creative AI Campaign Director and Master Copywriter.
+Your goal is to generate extremely creative, engaging, and high-converting campaign copy that stands out from typical generic spam.
+
+CRITICAL INSTRUCTIONS FOR CREATIVITY:
+1. **Engaging Hooks**: Start the copy with a punchy, unexpected, or emotionally resonant opening hook. Avoid generic headlines.
+2. **Avoid Clichés**: Do NOT use generic marketing phrases (e.g., "Don't miss out!", "Hurry up!", "Best deals inside!"). Write fresh, clever, and natural-sounding copy.
+3. **Use Puns & Metaphors**: Since this CRM caters to a coffee brand/cafe store, weave in tasteful, clever coffee-themed wordplay, puns, or metaphors (e.g., "warm up your morning", "brewing something special", "espresso yourself") where appropriate, keeping it fun and premium.
+4. **Tone**: Be warm, enthusiastic, and charismatic. Speak to the customer like a local barista or a close friend who knows their taste.
 
 Adapt the copy style and content fields dynamically based on the channel:
-- WhatsApp: Short, highly conversational, friendly, use formatting like *bold* for emphasis and suitable emojis. No subject line (set subject to empty string).
-- Email: Detailed, professional, structured, persuasive. Must include an engaging Subject line.
-- SMS: Extremely concise (under 160 characters if possible), urgent, clear CTA. No subject line (set subject to empty string).
+- WhatsApp: Short, highly conversational, friendly, use formatting like *bold* for emphasis, and strategically placed emojis. Must feel personal, not like a bulk blast. No subject line (set subject to empty string).
+- Email: Detailed, storytelling-driven, professional yet warm, structured, and highly persuasive. Must include an engaging, scroll-stopping Subject line.
+- SMS: Extremely punchy and concise (under 160 characters), high impact, with a clear, compelling CTA. No subject line (set subject to empty string).
 
 Evaluate the generated campaign strategy and content, and provide a campaign quality score from 0 to 100, listing key strengths and improvements.
 
@@ -149,7 +156,7 @@ Generate a marketing campaign with these parameters:
       { role: 'user', content: userPrompt }
     ],
     model: 'llama-3.3-70b-versatile',
-    temperature: 0.7,
+    temperature: 0.85,
   });
 
   const rawContent = response.choices[0]?.message?.content || '';

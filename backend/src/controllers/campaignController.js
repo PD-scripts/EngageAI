@@ -3,19 +3,26 @@ const excelParser = require('../services/excelParser');
 const queryEngine = require('../services/queryEngine');
 const campaignAiService = require('../services/campaignAiService');
 const Campaign = require('../models/Campaign');
+const communicationService = require('../services/communicationService');
+const axios = require('axios');
 
 const AUDIENCES_MAP = {
   'High Value Customers': [{ field: 'TotalSpend', operator: '>', value: 10000 }],
   'Delhi Customers': [{ field: 'City', operator: '=', value: 'Delhi' }],
   'Mumbai Customers': [{ field: 'City', operator: '=', value: 'Mumbai' }],
   'Pune Customers': [{ field: 'City', operator: '=', value: 'Pune' }],
+  'Hyderabad Customers': [{ field: 'City', operator: '=', value: 'Hyderabad' }],
   'Inactive Customers': [{ field: 'LastPurchaseDays', operator: '>', value: 90 }],
   'Frequent Buyers': [{ field: 'TotalOrders', operator: '>', value: 5 }],
   'All Customers': []
 };
 
-function calculateAudienceSummary(audienceName) {
-  const customers = excelParser.getCustomers();
+async function calculateAudienceSummary(audienceName) {
+  const Customer = require('../models/Customer');
+  const legacyMapper = require('../utils/legacyMapper');
+  const dbCustomers = await Customer.find().lean();
+  const customers = dbCustomers.map(legacyMapper.mapToLegacyCustomer);
+  
   const conditions = AUDIENCES_MAP[audienceName] || [];
   const filtered = queryEngine.applyFilters(customers, conditions);
 
@@ -52,6 +59,7 @@ function calculateAudienceSummary(audienceName) {
     if (audienceName.includes('Mumbai')) topCity = 'Mumbai';
     else if (audienceName.includes('Delhi')) topCity = 'Delhi';
     else if (audienceName.includes('Pune')) topCity = 'Pune';
+    else if (audienceName.includes('Hyderabad')) topCity = 'Hyderabad';
   }
 
   return {
@@ -77,7 +85,7 @@ async function generateCampaign(req, res) {
     const parsedParams = await campaignAiService.parseCampaignPrompt(prompt);
     const { audienceName, channel, goal } = parsedParams;
 
-    const summary = calculateAudienceSummary(audienceName);
+    const summary = await calculateAudienceSummary(audienceName);
 
     const campaignContent = await campaignAiService.generateCampaign({
       audienceName,
@@ -190,9 +198,13 @@ async function getCampaigns(req, res) {
  * GET /api/campaigns/audiences
  * Returns the list of standard segments populated with dynamic sizes.
  */
-function getAudiences(req, res) {
+async function getAudiences(req, res) {
   try {
-    const customers = excelParser.getCustomers();
+    const Customer = require('../models/Customer');
+    const legacyMapper = require('../utils/legacyMapper');
+    const dbCustomers = await Customer.find().lean();
+    const customers = dbCustomers.map(legacyMapper.mapToLegacyCustomer);
+    
     const audiences = Object.keys(AUDIENCES_MAP).map(name => {
       const conditions = AUDIENCES_MAP[name];
       const filtered = queryEngine.applyFilters(customers, conditions);
@@ -208,9 +220,195 @@ function getAudiences(req, res) {
   }
 }
 
+async function sendCampaign(req, res) {
+  try {
+    const { id } = req.params;
+
+    // 1. Fetch Campaign
+    const campaign = await Campaign.findById(id);
+    if (!campaign) {
+      return res.status(404).json({ error: `Campaign draft with ID ${id} not found.` });
+    }
+
+    // 2. Fetch Audience Segment
+    const audienceName = campaign.audienceName;
+    const conditions = AUDIENCES_MAP[audienceName] || [];
+    const Customer = require('../models/Customer');
+    const legacyMapper = require('../utils/legacyMapper');
+    const dbCustomers = await Customer.find().lean();
+    const customers = dbCustomers.map(legacyMapper.mapToLegacyCustomer);
+    const filteredCustomers = queryEngine.applyFilters(customers, conditions);
+
+    if (filteredCustomers.length === 0) {
+      return res.status(400).json({ error: `No active customers found in audience segment: ${audienceName}` });
+    }
+
+    // 3. Update Campaign status to 'Sent' in MongoDB and initialize stats
+    campaign.status = 'Sent';
+    campaign.sent = filteredCustomers.length;
+    campaign.delivered = 0;
+    campaign.failed = 0;
+    campaign.opened = 0;
+    campaign.clicked = 0;
+    campaign.purchased = 0;
+    await campaign.save();
+
+    // 3.5. Create CampaignAudience record in MongoDB
+    const CampaignAudience = require('../models/CampaignAudience');
+    const audienceDoc = new CampaignAudience({
+      campaignId: campaign._id,
+      audienceName: audienceName,
+      customerIds: filteredCustomers.map(c => c.CustomerID),
+      audienceSize: filteredCustomers.length
+    });
+    await audienceDoc.save();
+
+    // 4. Create communication records in MongoDB
+    const Communication = require('../models/Communication');
+    const commDocs = filteredCustomers.map(customer => ({
+      campaignId: campaign._id,
+      customerId: customer.CustomerID,
+      channel: campaign.channel,
+      status: 'SENT',
+      sentAt: new Date()
+    }));
+
+    const savedComms = await Communication.insertMany(commDocs);
+
+    // 5. Fire Axios calls to Channel Service in the background
+    const channelServiceUrl = process.env.CHANNEL_SERVICE_URL || 'http://localhost:6000/channel/send';
+    
+    const sendPromises = savedComms.map(comm => {
+      return axios.post(channelServiceUrl, {
+        communicationId: comm._id.toString(),
+        campaignId: comm.campaignId.toString(),
+        customerId: comm.customerId,
+        channel: comm.channel,
+        message: campaign.message
+      }).catch(err => {
+        console.error(`[CRM] Failed to trigger Channel Service for comm ${comm._id}:`, err.message);
+      });
+    });
+
+    // Don't block HTTP response waiting for channel service
+    Promise.all(sendPromises).then(() => {
+      console.log(`[CRM] Dispatched ${savedComms.length} messages to Channel Service successfully.`);
+    });
+
+    res.json({
+      success: true,
+      message: `Dispatched campaign to ${savedComms.length} recipients.`,
+      sentCount: savedComms.length
+    });
+
+  } catch (error) {
+    console.error('Error launching campaign send workflow:', error);
+    res.status(500).json({ error: "Internal Server Error sending campaign" });
+  }
+}
+
+async function getCampaignStatsEndpoint(req, res) {
+  try {
+    const { id } = req.params;
+    const Communication = require('../models/Communication');
+    
+    const campaignId = mongoose.Types.ObjectId.createFromHexString(id);
+
+    const sent = await Communication.countDocuments({ campaignId });
+    const failed = await Communication.countDocuments({ campaignId, status: 'FAILED' });
+    const delivered = await Communication.countDocuments({ campaignId, deliveredAt: { $ne: null } });
+    const opened = await Communication.countDocuments({ campaignId, openedAt: { $ne: null } });
+    const clicked = await Communication.countDocuments({ campaignId, clickedAt: { $ne: null } });
+    const purchased = await Communication.countDocuments({ campaignId, purchasedAt: { $ne: null } });
+
+    const stats = {
+      sent,
+      failed,
+      delivered,
+      opened,
+      clicked,
+      purchased
+    };
+
+    const comms = await Communication.find({ campaignId });
+    const events = [];
+
+    const Customer = require('../models/Customer');
+    
+    for (const c of comms) {
+      // Resolve shopper name from MongoDB
+      const shopper = await Customer.findOne({ customerId: c.customerId }).lean();
+      const shopperName = shopper ? shopper.name : `Shopper #${c.customerId}`;
+
+      // Push events for each timestamp that exists
+      if (c.sentAt) {
+        events.push({
+          id: `${c._id}-sent`,
+          text: `Campaign message was successfully SENT to ${shopperName} via ${c.channel}.`,
+          timestamp: c.sentAt,
+          type: 'SENT'
+        });
+      }
+      if (c.failedAt) {
+        events.push({
+          id: `${c._id}-failed`,
+          text: `Delivery FAILED for shopper ${shopperName}. Gateway rejected connection.`,
+          timestamp: c.failedAt,
+          type: 'FAILED'
+        });
+      }
+      if (c.deliveredAt) {
+        events.push({
+          id: `${c._id}-delivered`,
+          text: `Message DELIVERED to shopper ${shopperName}'s terminal.`,
+          timestamp: c.deliveredAt,
+          type: 'DELIVERED'
+        });
+      }
+      if (c.openedAt) {
+        events.push({
+          id: `${c._id}-opened`,
+          text: `Message OPENED by shopper ${shopperName}.`,
+          timestamp: c.openedAt,
+          type: 'OPENED'
+        });
+      }
+      if (c.clickedAt) {
+        events.push({
+          id: `${c._id}-clicked`,
+          text: `Shopper ${shopperName} CLICKED CTA product link.`,
+          timestamp: c.clickedAt,
+          type: 'CLICKED'
+        });
+      }
+      if (c.purchasedAt) {
+        events.push({
+          id: `${c._id}-purchased`,
+          text: `🎉 Shopper ${shopperName} completed PURCHASE checkout!`,
+          timestamp: c.purchasedAt,
+          type: 'PURCHASED'
+        });
+      }
+    }
+
+    const feed = events.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+    res.json({
+      stats,
+      feed
+    });
+  } catch (error) {
+    console.error('Error fetching campaign stats:', error);
+    res.status(500).json({ error: "Internal Server Error fetching campaign stats" });
+  }
+}
+
 module.exports = {
   generateCampaign,
   saveCampaign,
   getCampaigns,
-  getAudiences
+  getAudiences,
+  sendCampaign,
+  getCampaignStatsEndpoint
 };
+

@@ -12,7 +12,9 @@ const ALLOWED_FIELDS = [
   'TotalSpend',
   'TotalOrders',
   'LastPurchaseDays',
-  'CustomerType'
+  'CustomerType',
+  'healthScore',
+  'HealthScore'
 ];
 
 const ALLOWED_OPERATORS = ['=', '>', '<', '>=', '<='];
@@ -64,8 +66,11 @@ async function buildAudience(req, res) {
       }
     }
 
-    // 3. Get cached shoppers
-    const customers = excelParser.getCustomers();
+    // 3. Get shoppers from MongoDB
+    const Customer = require('../models/Customer');
+    const legacyMapper = require('../utils/legacyMapper');
+    const dbCustomers = await Customer.find().lean();
+    const customers = dbCustomers.map(legacyMapper.mapToLegacyCustomer);
 
     // 4. Run Stage 3 Dynamic Query Engine locally
     const filteredCustomers = queryEngine.applyFilters(customers, queryJson.conditions);

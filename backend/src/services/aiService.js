@@ -31,6 +31,8 @@ Allowed fields:
 - TotalOrders
 - LastPurchaseDays
 - CustomerType
+- healthScore
+- HealthScore
 
 Allowed operators:
 - =
@@ -50,7 +52,7 @@ Return only:
   ]
 }
 
-Ensure numeric comparisons are converted to numbers (e.g. TotalSpend, TotalOrders, LastPurchaseDays).
+Ensure numeric comparisons are converted to numbers (e.g. TotalSpend, TotalOrders, LastPurchaseDays, healthScore, HealthScore).
 Ensure string values are capitalized as requested (e.g. City names like "Delhi").
 
 Examples:
@@ -65,6 +67,12 @@ Output: {"conditions":[{"field":"TotalSpend","operator":"<","value":5000}]}
 
 User: Find customers inactive for more than 90 days
 Output: {"conditions":[{"field":"LastPurchaseDays","operator":">","value":90}]}
+
+User: Find customers with health score card above 50
+Output: {"conditions":[{"field":"healthScore","operator":">","value":50}]}
+
+User: Find customers with health score less than 40
+Output: {"conditions":[{"field":"healthScore","operator":"<","value":40}]}
 
 User: Find customers from Pune who spent more than 8000 and have more than 5 orders
 Output: {"conditions":[{"field":"City","operator":"=","value":"Pune"},{"field":"TotalSpend","operator":">","value":8000},{"field":"TotalOrders","operator":">","value":5}]}`;

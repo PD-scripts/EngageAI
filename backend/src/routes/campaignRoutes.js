@@ -7,5 +7,7 @@ router.get('/audiences', campaignController.getAudiences);
 router.post('/generate', campaignController.generateCampaign);
 router.post('/', campaignController.saveCampaign);
 router.get('/', campaignController.getCampaigns);
+router.post('/:id/send', campaignController.sendCampaign);
+router.get('/:id/stats', campaignController.getCampaignStatsEndpoint);
 
 module.exports = router;
