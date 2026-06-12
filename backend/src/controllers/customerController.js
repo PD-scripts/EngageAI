@@ -1,46 +1,54 @@
-const excelParser = require('../services/excelParser');
+const Customer = require('../models/Customer');
+const Order = require('../models/Order');
+const importService = require('../services/customerSync/importService');
+const legacyMapper = require('../utils/legacyMapper');
+const path = require('path');
 
 /**
  * GET /api/customers
  * Supports query parameters:
  *  - page: page number (default: 1)
  *  - limit: page size limit (default: 10)
- *  - search: searches across Name and Email (case-insensitive)
+ *  - search: searches across Name, Email, CustomerID, City (case-insensitive)
  *  - city: filters by city name (case-insensitive exact match)
  */
-function getCustomers(req, res) {
+async function getCustomers(req, res) {
   try {
     const page = parseInt(req.query.page, 10) || 1;
     const limit = parseInt(req.query.limit, 10) || 10;
-    const search = req.query.search ? req.query.search.trim().toLowerCase() : '';
-    const city = req.query.city ? req.query.city.trim().toLowerCase() : '';
+    const search = req.query.search ? req.query.search.trim() : '';
+    const city = req.query.city ? req.query.city.trim() : '';
 
-    let customers = excelParser.getCustomers();
+    const query = {};
 
-    // 1. Apply Search Filter (Searches across all fields)
+    // Apply City filter
+    if (city && city.toLowerCase() !== 'all' && city.toLowerCase() !== 'all cities') {
+      query.city = { $regex: new RegExp('^' + city + '$', 'i') };
+    }
+
+    // Apply Search filter across multiple fields
     if (search) {
-      customers = customers.filter(c => 
-        Object.values(c).some(val => 
-          val !== undefined && val !== null && String(val).toLowerCase().includes(search)
-        )
-      );
+      const searchRegex = new RegExp(search, 'i');
+      query.$or = [
+        { name: searchRegex },
+        { email: searchRegex },
+        { customerId: searchRegex },
+        { city: searchRegex }
+      ];
     }
 
-    // 2. Apply City Filter
-    if (city && city !== 'all' && city !== 'all cities') {
-      customers = customers.filter(c => 
-        c.City && c.City.toLowerCase() === city
-      );
-    }
-
-    // 3. Pagination calculation
-    const totalCustomers = customers.length;
+    const totalCustomers = await Customer.countDocuments(query);
     const totalPages = Math.ceil(totalCustomers / limit) || 1;
     const currentPage = Math.min(page, totalPages);
     const startIndex = (currentPage - 1) * limit;
-    const endIndex = startIndex + limit;
 
-    const paginatedCustomers = customers.slice(startIndex, endIndex);
+    const customers = await Customer.find(query)
+      .skip(startIndex)
+      .limit(limit)
+      .lean();
+
+    // Map MongoDB documents back to legacy format for frontend visual support
+    const paginatedCustomers = customers.map(legacyMapper.mapToLegacyCustomer);
 
     res.json({
       customers: paginatedCustomers,
@@ -58,20 +66,24 @@ function getCustomers(req, res) {
  * GET /api/customers/:id
  * Retrieves a customer profile and all their associated orders.
  */
-function getCustomerById(req, res) {
+async function getCustomerById(req, res) {
   try {
     const { id } = req.params;
-    const customer = excelParser.getCustomerById(id);
+    const customer = await Customer.findOne({ customerId: id }).lean();
 
     if (!customer) {
       return res.status(404).json({ message: `Customer with ID ${id} not found` });
     }
 
-    const orders = excelParser.getOrdersByCustomerId(id);
+    const orders = await Order.find({ customerId: id }).lean();
+
+    // Map to legacy format for UI support
+    const legacyCustomer = legacyMapper.mapToLegacyCustomer(customer);
+    const legacyOrders = orders.map(legacyMapper.mapToLegacyOrder);
 
     res.json({
-      customer,
-      orders
+      customer: legacyCustomer,
+      orders: legacyOrders
     });
   } catch (error) {
     console.error(`Error in getCustomerById controller for ID ${req.params.id}:`, error);
@@ -79,7 +91,29 @@ function getCustomerById(req, res) {
   }
 }
 
+/**
+ * POST /api/customers/import
+ * Imports customers and orders from Excel sheet into MongoDB.
+ */
+async function importCustomers(req, res) {
+  try {
+    const defaultExcelPath = path.resolve(__dirname, '../../data/Xeno_CRM_Dummy_Data.xlsx');
+    const filePath = req.body.filePath || defaultExcelPath;
+
+    const summary = await importService.importCustomersFromExcel(filePath);
+    
+    // Auto import/sync orders as well to keep operational database fully cohesive
+    await importService.importOrdersFromExcel(filePath);
+
+    res.json(summary);
+  } catch (error) {
+    console.error('[Customer Controller] Excel import failed:', error.message);
+    res.status(500).json({ error: `Failed to import customers: ${error.message}` });
+  }
+}
+
 module.exports = {
   getCustomers,
-  getCustomerById
+  getCustomerById,
+  importCustomers
 };

@@ -1,23 +1,29 @@
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
-import Layout from '../components/Layout';
+import MainLayout from '../layouts/MainLayout';
 import Dashboard from '../pages/Dashboard';
 import Customers from '../pages/Customers';
 import CustomerDetails from '../pages/CustomerDetails';
 import Orders from '../pages/Orders';
+import AudienceBuilder from '../pages/AudienceBuilder';
+import Campaigns from '../pages/Campaigns';
+import Analytics from '../pages/Analytics';
+import AIStrategist from '../pages/AIStrategist';
 import QueryTester from '../pages/QueryTester';
-import AICopilot from '../pages/AICopilot';
 
 const AppRoutes = () => {
   return (
     <Routes>
-      <Route path="/" element={<Layout />}>
+      <Route path="/" element={<MainLayout />}>
         <Route index element={<Dashboard />} />
         <Route path="customers" element={<Customers />} />
         <Route path="customers/:id" element={<CustomerDetails />} />
         <Route path="orders" element={<Orders />} />
+        <Route path="audience-builder" element={<AudienceBuilder />} />
+        <Route path="campaigns" element={<Campaigns />} />
+        <Route path="analytics" element={<Analytics />} />
+        <Route path="ai-strategist" element={<AIStrategist />} />
         <Route path="query-tester" element={<QueryTester />} />
-        <Route path="ai-copilot" element={<AICopilot />} />
         {/* Fallback route */}
         <Route path="*" element={<Dashboard />} />
       </Route>
@@ -26,4 +32,3 @@ const AppRoutes = () => {
 };
 
 export default AppRoutes;
-

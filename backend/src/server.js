@@ -1,6 +1,10 @@
 const express = require('express');
 const cors = require('cors');
-require('dotenv').config();
+require('dotenv').config({ override: true });
+
+// Connect to MongoDB
+const connectDB = require('./config/db');
+connectDB();
 
 // Load in-memory database parser
 const excelParser = require('./services/excelParser');
@@ -8,6 +12,14 @@ const excelParser = require('./services/excelParser');
 const customerRoutes = require('./routes/customerRoutes');
 const orderRoutes = require('./routes/orderRoutes');
 const queryRoutes = require('./routes/queryRoutes');
+const aiRoutes = require('./routes/aiRoutes');
+const campaignRoutes = require('./routes/campaignRoutes');
+const receiptRoutes = require('./routes/receiptRoutes');
+const analyticsRoutes = require('./routes/analyticsRoutes');
+const strategistRoutes = require('./routes/strategistRoutes');
+const recommendationRoutes = require('./routes/recommendationRoutes');
+const weatherRoutes = require('./routes/weatherRoutes');
+const backupRoutes = require('./routes/backupRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -25,6 +37,14 @@ app.get('/', (req, res) => {
 app.use('/api/customers', customerRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/query', queryRoutes);
+app.use('/api/ai', aiRoutes);
+app.use('/api/campaigns', campaignRoutes);
+app.use('/api/receipts', receiptRoutes);
+app.use('/api/analytics', analyticsRoutes);
+app.use('/api/strategist', strategistRoutes);
+app.use('/api/recommendations', recommendationRoutes);
+app.use('/api/weather', weatherRoutes);
+app.use('/api/backups', backupRoutes);
 
 // Start server
 app.listen(PORT, () => {

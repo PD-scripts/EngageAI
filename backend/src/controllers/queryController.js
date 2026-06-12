@@ -1,5 +1,6 @@
 const queryEngine = require('../services/queryEngine');
-const excelParser = require('../services/excelParser');
+const Customer = require('../models/Customer');
+const legacyMapper = require('../utils/legacyMapper');
 
 // Whitelists for validation
 const ALLOWED_FIELDS = [
@@ -12,7 +13,9 @@ const ALLOWED_FIELDS = [
   'TotalOrders',
   'LastPurchaseDays',
   'CustomerType',
-  'IsFirstTimeBuyer'
+  'IsFirstTimeBuyer',
+  'healthScore',
+  'HealthScore'
 ];
 
 const ALLOWED_OPERATORS = ['=', '>', '<', '>=', '<='];
@@ -21,7 +24,7 @@ const ALLOWED_OPERATORS = ['=', '>', '<', '>=', '<='];
  * POST /api/query
  * Executes a dynamic filter on the shopper database.
  */
-function executeQuery(req, res) {
+async function executeQuery(req, res) {
   try {
     const { conditions } = req.body;
 
@@ -54,8 +57,9 @@ function executeQuery(req, res) {
       }
     }
 
-    // Get cached customers
-    const customers = excelParser.getCustomers();
+    // Get live customers from MongoDB and map to legacy format
+    const dbCustomers = await Customer.find().lean();
+    const customers = dbCustomers.map(legacyMapper.mapToLegacyCustomer);
 
     // Execute query
     const results = queryEngine.applyFilters(customers, conditions);

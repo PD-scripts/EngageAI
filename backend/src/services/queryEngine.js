@@ -18,7 +18,7 @@ function matchCondition(customer, condition) {
     return false;
   }
 
-  const numericFields = ['TotalSpend', 'TotalOrders', 'LastPurchaseDays'];
+  const numericFields = ['TotalSpend', 'TotalOrders', 'LastPurchaseDays', 'healthScore', 'HealthScore'];
   const isNumeric = numericFields.includes(field);
 
   if (isNumeric) {
