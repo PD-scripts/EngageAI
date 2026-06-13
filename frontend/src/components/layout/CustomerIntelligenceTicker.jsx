@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { API_BASE_URL } from '../../config/api';
 import TickerItem from './TickerItem';
 
 const CustomerIntelligenceTicker = () => {
@@ -19,8 +20,8 @@ const CustomerIntelligenceTicker = () => {
     const fetchMongoDBData = async () => {
       try {
         const [custRes, campRes] = await Promise.all([
-          axios.get('http://localhost:5000/api/customers?limit=100'),
-          axios.get('http://localhost:5000/api/campaigns')
+          axios.get(`${API_BASE_URL}/customers?limit=100`),
+          axios.get(`${API_BASE_URL}/campaigns`)
         ]);
 
         const customers = custRes.data?.customers || [];
