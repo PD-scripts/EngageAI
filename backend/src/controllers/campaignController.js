@@ -5,6 +5,7 @@ const campaignAiService = require('../services/campaignAiService');
 const Campaign = require('../models/Campaign');
 const communicationService = require('../services/communicationService');
 const axios = require('axios');
+const campaignAnalyticsService = require('../services/campaignAnalytics/campaignAnalyticsService');
 
 const AUDIENCES_MAP = {
   'High Value Customers': [{ field: 'TotalSpend', operator: '>', value: 10000 }],
@@ -141,7 +142,11 @@ async function saveCampaign(req, res) {
       return res.status(400).json({ error: "Missing required fields to save campaign" });
     }
 
+    const campaignIdStr = new mongoose.Types.ObjectId();
     const newCampaign = new Campaign({
+      _id: campaignIdStr,
+      campaignId: campaignIdStr.toString(),
+      campaignName: title,
       audienceName,
       audienceSize: Number(audienceSize) || 0,
       channel,
@@ -160,9 +165,17 @@ async function saveCampaign(req, res) {
       
       sent: 0,
       delivered: 0,
+      failed: 0,
       opened: 0,
       clicked: 0,
-      purchased: 0
+      purchased: 0,
+      purchases: 0,
+      revenueGenerated: 0,
+      campaignCost: 0,
+      openRate: 0,
+      clickRate: 0,
+      conversionRate: 0,
+      roi: 0
     });
 
     await newCampaign.save();
@@ -245,12 +258,28 @@ async function sendCampaign(req, res) {
 
     // 3. Update Campaign status to 'Sent' in MongoDB and initialize stats
     campaign.status = 'Sent';
+    campaign.campaignId = campaign._id.toString();
+    campaign.campaignName = campaign.title;
     campaign.sent = filteredCustomers.length;
     campaign.delivered = 0;
     campaign.failed = 0;
     campaign.opened = 0;
     campaign.clicked = 0;
     campaign.purchased = 0;
+    campaign.purchases = 0;
+    campaign.revenueGenerated = 0;
+    
+    // Estimate campaign cost dynamically
+    let costPerMessage = 0.5;
+    if (campaign.channel.toLowerCase().includes('whatsapp')) costPerMessage = 2.0;
+    else if (campaign.channel.toLowerCase().includes('sms')) costPerMessage = 1.0;
+    else if (campaign.channel.toLowerCase().includes('social')) costPerMessage = 1.5;
+    
+    campaign.campaignCost = Math.round(filteredCustomers.length * costPerMessage);
+    campaign.openRate = 0;
+    campaign.clickRate = 0;
+    campaign.conversionRate = 0;
+    campaign.roi = 0;
     await campaign.save();
 
     // 3.5. Create CampaignAudience record in MongoDB
@@ -403,12 +432,52 @@ async function getCampaignStatsEndpoint(req, res) {
   }
 }
 
+async function getCampaignAnalytics(req, res) {
+  try {
+    if (mongoose.connection.readyState !== 1) {
+      return res.status(503).json({ 
+        error: "MongoDB connection is offline. Please ensure your IP is whitelisted in MongoDB Atlas Network Access." 
+      });
+    }
+
+    const campaigns = await Campaign.find().sort({ createdAt: -1 }).lean();
+
+    const bestCampaignObj = campaignAnalyticsService.getBestCampaign(campaigns);
+    const bestCampaignName = bestCampaignObj ? bestCampaignObj.title : 'N/A';
+    const bestCampaignROI = bestCampaignObj ? bestCampaignObj.roi : 0;
+
+    const bestChannel = campaignAnalyticsService.getBestChannel(campaigns);
+    const totalRevenueGenerated = campaigns.reduce((sum, c) => sum + (c.revenueGenerated || 0), 0);
+    const averageROI = campaignAnalyticsService.getAverageROI(campaigns);
+
+    const leaderboard = campaignAnalyticsService.getCampaignLeaderboard(campaigns);
+    const insights = campaignAnalyticsService.generateCampaignInsights(campaigns);
+
+    res.json({
+      kpis: {
+        bestCampaign: bestCampaignName,
+        bestCampaignROI: bestCampaignROI,
+        bestChannel: bestChannel,
+        revenueGenerated: totalRevenueGenerated,
+        averageROI: averageROI
+      },
+      leaderboard,
+      insights,
+      campaigns
+    });
+  } catch (error) {
+    console.error('Error fetching campaign analytics:', error);
+    res.status(500).json({ error: "Internal Server Error fetching campaign analytics" });
+  }
+}
+
 module.exports = {
   generateCampaign,
   saveCampaign,
   getCampaigns,
   getAudiences,
   sendCampaign,
-  getCampaignStatsEndpoint
+  getCampaignStatsEndpoint,
+  getCampaignAnalytics
 };
 

@@ -2,13 +2,12 @@ import React from 'react';
 import { Sparkles } from 'lucide-react';
 import coffeeBeansDeco from '../../assets/coffee_beans_deco.png';
 
-const AIInsights = () => {
-  const insights = [
-    { text: 'Cold Brew demand is expected to rise in Delhi tomorrow due to the temperature surge.' },
-    { text: 'Birthday campaigns historically generate 18% higher conversion and enhance customer lifetime value.' },
-    { text: 'VIP customers engage 24% more through WhatsApp than traditional email communication.' },
-    { text: 'Mumbai customer activity declined 9% this month, suggesting targeted loyalty rewards are required.' }
-  ];
+const AIInsights = ({ insights: propInsights }) => {
+  const insights = (propInsights && propInsights.length > 0)
+    ? propInsights.map(text => ({ text }))
+    : [
+        { text: 'No live performance metrics analyzed yet. Send campaign events to compile AI insights.' }
+      ];
 
   return (
     <div className="relative w-full rounded-2xl border border-[#B08D57]/15 bg-gradient-to-br from-[#161619] to-[#0B0B0D] p-6 lg:p-8 overflow-hidden shadow-xl min-h-[280px] flex flex-col justify-between">

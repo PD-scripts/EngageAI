@@ -8,7 +8,7 @@ import RotatingInsights from './RotatingInsights';
 import coffeeBeansDeco from '../../assets/coffee_beans_deco.png';
 import coffeeVideo from '../../assets/videos/coffee-hero.mp4';
 
-const HeroBanner = () => {
+const HeroBanner = ({ recommendations }) => {
   const [coords, setCoords] = useState({ x: 0, y: 0 });
   const [currentStep, setCurrentStep] = useState(0);
 
@@ -44,13 +44,7 @@ const HeroBanner = () => {
     <div 
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
-      className="relative w-full rounded-[32px] overflow-hidden bg-[#0B0B0D] border p-8 lg:p-14 flex flex-col lg:flex-row items-center justify-between min-h-[500px] lg:h-[580px] shadow-2xl transition-all duration-700 select-none"
-      style={{
-        borderColor: currentStep === 4 ? 'rgba(176, 141, 87, 0.45)' : 'rgba(176, 141, 87, 0.15)',
-        boxShadow: currentStep === 4 
-          ? '0 0 50px rgba(176, 141, 87, 0.2), inset 0 0 20px rgba(176, 141, 87, 0.05), 0 10px 30px rgba(0,0,0,0.5)' 
-          : '0 10px 30px rgba(0,0,0,0.5)'
-      }}
+      className="relative w-auto -mx-8 lg:-mx-10 -mt-8 lg:-mt-10 overflow-visible bg-[#0B0B0D] px-8 lg:px-10 py-12 lg:py-16 flex flex-col lg:flex-row items-center justify-between min-h-[500px] lg:h-[580px] transition-all duration-700 select-none"
     >
       {/* BACKGROUND LAYER: Looping Cinematic Coffee Video (brighter and more vibrant) */}
       <video
@@ -66,7 +60,7 @@ const HeroBanner = () => {
       <div 
         className="absolute inset-0 z-1 pointer-events-none" 
         style={{
-          background: 'linear-gradient(90deg, rgba(11,11,13,0.70) 0%, rgba(11,11,13,0.45) 35%, rgba(11,11,13,0.20) 70%, rgba(11,11,13,0.05) 100%)'
+          background: 'transparent'
         }}
       />
 
@@ -74,27 +68,25 @@ const HeroBanner = () => {
       <div 
         className="absolute inset-0 z-1 pointer-events-none" 
         style={{
-          backgroundColor: 'rgba(176,141,87,0.08)'
+          backgroundColor: 'transparent'
         }}
       />
 
       {/* BACKGROUND BLENDING: Edge gradients to merge the video container seamlessly into the dashboard theme */}
-      <div className="absolute top-0 left-0 right-0 h-16 bg-gradient-to-b from-[#0B0B0D] to-transparent z-1 pointer-events-none" />
-      <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-[#0B0B0D] to-transparent z-1 pointer-events-none" />
-      <div className="absolute top-0 bottom-0 left-0 w-16 bg-gradient-to-r from-[#0B0B0D] to-transparent z-1 pointer-events-none" />
-      <div className="absolute top-0 bottom-0 right-0 w-16 bg-gradient-to-l from-[#0B0B0D] to-transparent z-1 pointer-events-none" />
+      <div className="absolute top-0 left-0 right-0 h-28 bg-transparent z-1 pointer-events-none" />
+      <div className="absolute bottom-0 left-0 right-0 h-32 bg-transparent z-1 pointer-events-none" />
+      <div className="absolute top-0 bottom-0 left-0 w-28 bg-transparent z-1 pointer-events-none" />
+      <div className="absolute top-0 bottom-0 right-0 w-28 bg-transparent z-1 pointer-events-none" />
 
       {/* Subtle Dark Vignette Overlay for background depth */}
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(0,0,0,0)_40%,#0B0B0D_95%)] z-1 pointer-events-none" />
+      <div className="absolute inset-0 bg-transparent z-1 pointer-events-none" />
 
       {/* Background radial bronze glow */}
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,rgba(176,141,87,0.15),transparent_65%)] z-1 pointer-events-none" />
+      <div className="absolute inset-0 bg-transparent z-1 pointer-events-none" />
 
       {/* COFFEE REACTION EFFECT: Unified background bronze pulse glow on scan completion */}
       <div 
-        className={`absolute inset-0 bg-[radial-gradient(circle_at_60%_40%,rgba(176,141,87,0.28),transparent_70%)] transition-opacity duration-1000 z-1 pointer-events-none ${
-          currentStep === 4 ? 'opacity-100 animate-pulse' : 'opacity-0'
-        }`} 
+        className={`absolute inset-0 bg-transparent transition-opacity duration-1000 z-1 pointer-events-none`} 
       />
 
       {/* Floating Coffee Beans Parallax Micro-Animations */}
@@ -103,14 +95,14 @@ const HeroBanner = () => {
         alt="Floating Bean Left"
         animate={{ x: coords.x * -1.8, y: coords.y * -1.8 }}
         transition={{ type: 'spring', damping: 20 }}
-        className="absolute top-10 left-12 w-20 opacity-[0.05] pointer-events-none z-10 rotate-12"
+        className="absolute top-[-20px] left-[-10px] w-20 opacity-[0.05] pointer-events-none z-10 rotate-12"
       />
       <motion.img 
         src={coffeeBeansDeco}
         alt="Floating Bean Right"
         animate={{ x: coords.x * 2.2, y: coords.y * 2.2 }}
         transition={{ type: 'spring', damping: 20 }}
-        className="absolute bottom-12 right-24 w-28 opacity-[0.04] pointer-events-none z-10 -rotate-45"
+        className="absolute bottom-[-30px] right-[40px] w-28 opacity-[0.04] pointer-events-none z-10 -rotate-45"
       />
       <motion.img 
         src={coffeeBeansDeco}
@@ -143,7 +135,7 @@ const HeroBanner = () => {
             Good Morning, <span className="font-semibold text-transparent bg-clip-text bg-gradient-to-r from-[#F5F1EA] via-[#EAE6DF] to-[#B08D57]">Sophia</span>
           </h1>
           
-          <RotatingInsights />
+          <RotatingInsights recommendations={recommendations} />
           
           <p 
             style={{ textShadow: '0 2px 12px rgba(0,0,0,0.45)' }}

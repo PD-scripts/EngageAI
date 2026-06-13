@@ -9,6 +9,7 @@ import AIInsights from '../components/dashboard/AIInsights';
 import CustomerHealth from '../components/dashboard/CustomerHealth';
 import RegionalIntelligence from '../components/dashboard/RegionalIntelligence';
 import CampaignPerformance from '../components/dashboard/CampaignPerformance';
+import CampaignAnalyticsHub from '../components/dashboard/CampaignAnalyticsHub';
 
 const API_BASE_URL = 'http://localhost:5000/api';
 
@@ -16,14 +17,38 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const [customers, setCustomers] = useState([]);
   const [campaigns, setCampaigns] = useState([]);
+  const [analyticsData, setAnalyticsData] = useState({
+    kpis: {},
+    leaderboard: [],
+    insights: [],
+    campaigns: []
+  });
+  const [recommendations, setRecommendations] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [analyticsLoading, setAnalyticsLoading] = useState(true);
+
+  const refreshAnalytics = async () => {
+    try {
+      setAnalyticsLoading(true);
+      const res = await axios.get(`${API_BASE_URL}/campaigns/analytics`);
+      if (res.data) {
+        setAnalyticsData(res.data);
+      }
+    } catch (error) {
+      console.warn('[Campaign Analytics Sync] Fetch error:', error.message);
+    } finally {
+      setAnalyticsLoading(false);
+    }
+  };
 
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        const [custRes, campRes] = await Promise.all([
+        const [custRes, campRes, analyticsRes, recsRes] = await Promise.all([
           axios.get(`${API_BASE_URL}/customers?limit=250`),
-          axios.get(`${API_BASE_URL}/campaigns`)
+          axios.get(`${API_BASE_URL}/campaigns`),
+          axios.get(`${API_BASE_URL}/campaigns/analytics`),
+          axios.get(`${API_BASE_URL}/recommendations`)
         ]);
 
         if (custRes.data && custRes.data.customers) {
@@ -32,10 +57,17 @@ const Dashboard = () => {
         if (campRes.data) {
           setCampaigns(campRes.data);
         }
+        if (analyticsRes.data) {
+          setAnalyticsData(analyticsRes.data);
+        }
+        if (recsRes.data && recsRes.data.recommendations) {
+          setRecommendations(recsRes.data.recommendations);
+        }
       } catch (error) {
         console.warn('[Dashboard Data Sync] Backend offline or fetch error:', error.message);
       } finally {
         setLoading(false);
+        setAnalyticsLoading(false);
       }
     };
 
@@ -55,17 +87,24 @@ const Dashboard = () => {
       ) : (
         <DashboardLayout>
           {/* Section 1: Cinematic Hero Section */}
-          <HeroBanner />
+          <HeroBanner recommendations={recommendations} />
+
+          {/* Section 1.5: Campaign Performance Analytics Hub */}
+          <CampaignAnalyticsHub 
+            analyticsData={analyticsData}
+            onRefresh={refreshAnalytics}
+            isLoading={analyticsLoading}
+          />
 
           {/* Section 2: Marketing Opportunities (exactly 3 cards) */}
-          <MarketingOpportunities onNavigate={(path, state) => navigate(path, state)} />
+          <MarketingOpportunities opportunities={recommendations} onNavigate={(path, state) => navigate(path, state)} />
 
           {/* 2-Column Grid Layout */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
             
             {/* Left Side: AI Insights (Section 3) + Regional Intelligence (Section 5) */}
             <div className="lg:col-span-6 flex flex-col space-y-8">
-              <AIInsights />
+              <AIInsights insights={analyticsData.insights} />
               <RegionalIntelligence />
             </div>
 

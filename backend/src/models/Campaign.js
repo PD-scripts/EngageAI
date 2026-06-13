@@ -17,12 +17,23 @@ const campaignSchema = new mongoose.Schema({
   improvements: [{ type: String }],
   status: { type: String, default: 'Draft' },
   
+  campaignId: { type: String },
+  campaignName: { type: String },
+  
   // Future metrics placeholders
   sent: { type: Number, default: 0 },
   delivered: { type: Number, default: 0 },
+  failed: { type: Number, default: 0 },
   opened: { type: Number, default: 0 },
   clicked: { type: Number, default: 0 },
-  purchased: { type: Number, default: 0 }
+  purchased: { type: Number, default: 0 },
+  purchases: { type: Number, default: 0 },
+  revenueGenerated: { type: Number, default: 0 },
+  campaignCost: { type: Number, default: 0 },
+  openRate: { type: Number, default: 0 },
+  clickRate: { type: Number, default: 0 },
+  conversionRate: { type: Number, default: 0 },
+  roi: { type: Number, default: 0 }
 }, {
   timestamps: true
 });

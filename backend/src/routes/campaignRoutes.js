@@ -4,6 +4,7 @@ const campaignController = require('../controllers/campaignController');
 
 // Map Campaign Builder endpoints
 router.get('/audiences', campaignController.getAudiences);
+router.get('/analytics', campaignController.getCampaignAnalytics);
 router.post('/generate', campaignController.generateCampaign);
 router.post('/', campaignController.saveCampaign);
 router.get('/', campaignController.getCampaigns);

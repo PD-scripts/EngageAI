@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 
-const RotatingInsights = () => {
-  const insights = [
-    "42 customers at risk of churn",
-    "18 birthdays detected this week",
-    "Delhi heatwave expected tomorrow",
-    "Cold Brew demand rising in North India",
-    "VIP customers showing higher engagement"
-  ];
+const RotatingInsights = ({ recommendations }) => {
+  const insights = (recommendations && recommendations.length > 0)
+    ? recommendations.map(rec => rec.description || rec.title)
+    : [
+        "Track customer interactions to see real-time insights",
+        "Launch your next coffee campaign today",
+        "Coffee intelligence engine is active"
+      ];
 
   const [index, setIndex] = useState(0);
 

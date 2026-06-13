@@ -58,15 +58,30 @@ async function handleReceipt(req, res) {
     const clicked = await Communication.countDocuments({ campaignId, clickedAt: { $ne: null } });
     const purchased = await Communication.countDocuments({ campaignId, purchasedAt: { $ne: null } });
 
-    // Sync database cache to keep dashboard lists clean
-    await Campaign.findByIdAndUpdate(campaignId, {
-      sent,
-      delivered,
-      failed,
-      opened,
-      clicked,
-      purchased
-    });
+    // Fetch the campaign to calculate rates and ROI
+    const campaignObj = await Campaign.findById(campaignId);
+    if (campaignObj) {
+      const openRate = delivered > 0 ? (opened / delivered) * 100 : 0;
+      const clickRate = opened > 0 ? (clicked / opened) * 100 : 0;
+      const conversionRate = clicked > 0 ? (purchased / clicked) * 100 : 0;
+      const revenueGenerated = purchased * 250; // ₹250 per purchase
+      const roi = campaignObj.campaignCost > 0 ? (revenueGenerated / campaignObj.campaignCost) : 0;
+
+      await Campaign.findByIdAndUpdate(campaignId, {
+        sent,
+        delivered,
+        failed,
+        opened,
+        clicked,
+        purchased,
+        purchases: purchased, // Sync purchases with purchased
+        revenueGenerated,
+        openRate,
+        clickRate,
+        conversionRate,
+        roi
+      });
+    }
 
     res.json({
       success: true,

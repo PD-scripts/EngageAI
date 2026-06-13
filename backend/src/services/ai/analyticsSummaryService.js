@@ -100,6 +100,16 @@ async function getAnalyticsSummary() {
       }
     });
 
+    // Aggregate campaign performance data for the AI Strategist (PII-free)
+    const Campaign = require('../../models/Campaign');
+    const campaignAnalyticsService = require('../campaignAnalytics/campaignAnalyticsService');
+    const campaigns = await Campaign.find().lean();
+    const totalCampaigns = campaigns.length;
+    const campaignAverageRoi = campaignAnalyticsService.getAverageROI(campaigns);
+    const campaignBestChannel = campaignAnalyticsService.getBestChannel(campaigns);
+    const bestCampaignObj = campaignAnalyticsService.getBestCampaign(campaigns);
+    const bestCampaignName = bestCampaignObj ? bestCampaignObj.title : 'N/A';
+
     return {
       totalCustomers,
       totalRevenue,
@@ -134,7 +144,13 @@ async function getAnalyticsSummary() {
       // Health Score Aggregates
       averageHealthScore,
       atRiskCustomers,
-      championCustomers
+      championCustomers,
+
+      // Campaign Analytics Aggregates
+      totalCampaigns,
+      campaignAverageRoi: Number(campaignAverageRoi.toFixed(2)),
+      campaignBestChannel,
+      bestCampaignName
     };
   } catch (error) {
     console.error('[Analytics Summary Service] Failed to compile aggregates:', error);
@@ -163,7 +179,11 @@ async function getAnalyticsSummary() {
       averageSpend: 0,
       averageHealthScore: 0,
       atRiskCustomers: 0,
-      championCustomers: 0
+      championCustomers: 0,
+      totalCampaigns: 0,
+      campaignAverageRoi: 0,
+      campaignBestChannel: 'N/A',
+      bestCampaignName: 'N/A'
     };
   }
 }
