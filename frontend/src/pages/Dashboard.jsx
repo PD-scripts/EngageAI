@@ -27,6 +27,9 @@ const Dashboard = () => {
   const [customerStats, setCustomerStats] = useState({ totalCustomers: 0, newCustomersToday: 0 });
   const [loading, setLoading] = useState(true);
   const [analyticsLoading, setAnalyticsLoading] = useState(true);
+  const [customersLoading, setCustomersLoading] = useState(true);
+  const [campaignsLoading, setCampaignsLoading] = useState(true);
+  const [recsLoading, setRecsLoading] = useState(true);
 
   const refreshAnalytics = async () => {
     try {
@@ -43,43 +46,84 @@ const Dashboard = () => {
   };
 
   useEffect(() => {
-    const fetchDashboardData = async () => {
+    const fetchStats = async () => {
       try {
-        const [custRes, campRes, analyticsRes, recsRes, statsRes] = await Promise.all([
-          axios.get(`${API_BASE_URL}/customers?limit=250`),
-          axios.get(`${API_BASE_URL}/campaigns`),
-          axios.get(`${API_BASE_URL}/campaigns/analytics`),
-          axios.get(`${API_BASE_URL}/recommendations`),
-          axios.get(`${API_BASE_URL}/customers/stats`)
-        ]);
-
-        if (custRes.data && custRes.data.customers) {
-          setCustomers(custRes.data.customers);
-        }
-        if (campRes.data) {
-          setCampaigns(campRes.data);
-        }
-        if (analyticsRes.data) {
-          setAnalyticsData(analyticsRes.data);
-        }
-        if (recsRes.data && recsRes.data.recommendations) {
-          setRecommendations(recsRes.data.recommendations);
-        }
+        const statsRes = await axios.get(`${API_BASE_URL}/customers/stats`);
         if (statsRes.data) {
           setCustomerStats(statsRes.data);
         }
       } catch (error) {
-        console.warn('[Dashboard Data Sync] Backend offline or fetch error:', error.message);
+        console.warn('[Dashboard Stats Sync] Fetch error:', error.message);
       }
     };
 
-    fetchDashboardData();
+    const fetchCustomers = async () => {
+      try {
+        setCustomersLoading(true);
+        const custRes = await axios.get(`${API_BASE_URL}/customers?limit=250`);
+        if (custRes.data && custRes.data.customers) {
+          setCustomers(custRes.data.customers);
+        }
+      } catch (error) {
+        console.warn('[Dashboard Customers Sync] Fetch error:', error.message);
+      } finally {
+        setCustomersLoading(false);
+      }
+    };
 
-    // Reduce loader display time to exactly 1 second (1000ms) for high-speed feel
+    const fetchCampaigns = async () => {
+      try {
+        setCampaignsLoading(true);
+        const campRes = await axios.get(`${API_BASE_URL}/campaigns`);
+        if (campRes.data) {
+          setCampaigns(campRes.data);
+        }
+      } catch (error) {
+        console.warn('[Dashboard Campaigns Sync] Fetch error:', error.message);
+      } finally {
+        setCampaignsLoading(false);
+      }
+    };
+
+    const fetchRecommendations = async () => {
+      try {
+        setRecsLoading(true);
+        const recsRes = await axios.get(`${API_BASE_URL}/recommendations`);
+        if (recsRes.data && recsRes.data.recommendations) {
+          setRecommendations(recsRes.data.recommendations);
+        }
+      } catch (error) {
+        console.warn('[Dashboard Recommendations Sync] Fetch error:', error.message);
+      } finally {
+        setRecsLoading(false);
+      }
+    };
+
+    const fetchAnalytics = async () => {
+      try {
+        setAnalyticsLoading(true);
+        const analyticsRes = await axios.get(`${API_BASE_URL}/campaigns/analytics`);
+        if (analyticsRes.data) {
+          setAnalyticsData(analyticsRes.data);
+        }
+      } catch (error) {
+        console.warn('[Dashboard Analytics Sync] Fetch error:', error.message);
+      } finally {
+        setAnalyticsLoading(false);
+      }
+    };
+
+    // Fire all requests concurrently and asynchronously (non-blocking lazy load)
+    fetchStats();
+    fetchCustomers();
+    fetchCampaigns();
+    fetchRecommendations();
+    fetchAnalytics();
+
+    // Release global splash screen in 200ms so dashboard skeleton renders instantly
     const timer = setTimeout(() => {
       setLoading(false);
-      setAnalyticsLoading(false);
-    }, 1000);
+    }, 200);
 
     return () => clearTimeout(timer);
   }, []);
@@ -97,7 +141,7 @@ const Dashboard = () => {
       ) : (
         <DashboardLayout>
           {/* Section 1: Cinematic Hero Section */}
-          <HeroBanner recommendations={recommendations} stats={customerStats} />
+          <HeroBanner recommendations={recsLoading ? [] : recommendations} stats={customerStats} />
 
           {/* Section 1.5: Campaign Performance Analytics Hub */}
           <CampaignAnalyticsHub 
@@ -107,21 +151,21 @@ const Dashboard = () => {
           />
 
           {/* Section 2: Marketing Opportunities (exactly 3 cards) */}
-          <MarketingOpportunities opportunities={recommendations} onNavigate={(path, state) => navigate(path, state)} />
+          <MarketingOpportunities opportunities={recsLoading ? [] : recommendations} onNavigate={(path, state) => navigate(path, state)} />
 
           {/* 2-Column Grid Layout */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
             
             {/* Left Side: AI Insights (Section 3) + Regional Intelligence (Section 5) */}
             <div className="lg:col-span-6 flex flex-col space-y-8">
-              <AIInsights insights={analyticsData.insights} />
+              <AIInsights insights={analyticsData.insights} isLoading={analyticsLoading} />
               <RegionalIntelligence />
             </div>
 
             {/* Right Side: Customer Health (Section 4) + Campaign Performance (Section 6) */}
             <div className="lg:col-span-6 flex flex-col space-y-8">
-              <CustomerHealth customers={customers} />
-              <CampaignPerformance campaigns={campaigns} />
+              <CustomerHealth customers={customers} isLoading={customersLoading} />
+              <CampaignPerformance campaigns={campaigns} isLoading={campaignsLoading} />
             </div>
 
           </div>
