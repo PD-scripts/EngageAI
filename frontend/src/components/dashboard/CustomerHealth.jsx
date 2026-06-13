@@ -1,6 +1,30 @@
 import React from 'react';
 
-const CustomerHealth = ({ customers = [] }) => {
+const CustomerHealth = ({ customers = [], isLoading }) => {
+  if (isLoading) {
+    return (
+      <div className="w-full rounded-2xl border border-[#B08D57]/15 bg-gradient-to-br from-[#161619] to-[#0B0B0D] p-6 lg:p-8 shadow-xl animate-pulse">
+        <div className="space-y-6">
+          <div className="flex items-center justify-between border-b border-[#B08D57]/10 pb-3">
+            <div className="h-4 bg-[#B08D57]/20 rounded w-1/3" />
+            <div className="h-3 bg-[#B08D57]/10 rounded w-16" />
+          </div>
+          <div className="space-y-5">
+            {[1, 2, 3, 4].map(n => (
+              <div key={n} className="space-y-2">
+                <div className="flex justify-between">
+                  <div className="h-3 bg-[#F5F1EA]/10 rounded w-1/3" />
+                  <div className="h-3 bg-[#F5F1EA]/10 rounded w-12" />
+                </div>
+                <div className="h-1.5 bg-[#0B0B0D]/90 rounded-full border border-[#B08D57]/5" />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // Compute counts
   let champion = 0;
   let healthy = 0;
