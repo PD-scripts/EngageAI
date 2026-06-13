@@ -3,45 +3,76 @@ import coffeeLatteArt from '../../assets/coffee_latte_art.png';
 import icedCoffee from '../../assets/iced_coffee.png';
 import coffeeCupTop from '../../assets/coffee_cup_top.png';
 
-const MarketingOpportunities = ({ onNavigate }) => {
-  const opportunities = [
-    {
-      id: 'birthday-opp',
-      title: 'Birthday Opportunity',
-      description: '18 customers have birthdays this week.',
-      revenueLabel: 'Expected Revenue',
-      revenue: '₹12,400',
-      actionLabel: 'Suggested Campaign',
-      actionValue: 'Birthday Rewards Campaign',
-      image: coffeeLatteArt,
-      path: '/campaigns',
-      state: { audience: 'Birthday Customers', template: 'Birthday Promo' }
-    },
-    {
-      id: 'weather-opp',
-      title: 'Weather Opportunity',
-      description: 'Delhi temperature expected to reach 41°C.',
-      promoteLabel: 'Promote',
-      promoteTags: ['Cold Brew', 'Iced Latte'],
-      revenueLabel: 'Expected Revenue',
-      revenue: '₹18,000',
-      image: icedCoffee,
-      path: '/campaigns',
-      state: { audience: 'Delhi Customers', template: 'Cold Brew Promo' }
-    },
-    {
-      id: 'health-opp',
-      title: 'Customer Health Opportunity',
-      description: '42 customers are at risk of churn.',
-      actionLabel: 'Suggested Campaign',
-      actionValue: 'Win-back Coffee Campaign',
-      revenueLabel: 'Potential Recovery',
-      revenue: '₹24,600',
-      image: coffeeCupTop,
-      path: '/campaigns',
-      state: { audience: 'Inactive Customers', template: 'Winback Promo' }
-    }
-  ];
+const MarketingOpportunities = ({ opportunities: propOpportunities, onNavigate }) => {
+  const opportunities = (propOpportunities && propOpportunities.length > 0)
+    ? propOpportunities.slice(0, 3).map((rec, index) => {
+        let image = coffeeLatteArt;
+        if (rec.type?.includes('HEALTH') || rec.type?.includes('CHURN')) {
+          image = coffeeCupTop;
+        } else if (rec.type?.includes('REVENUE') || rec.type?.includes('CHANNEL') || rec.type?.includes('CITY')) {
+          image = icedCoffee;
+        }
+        
+        let audienceName = 'All Customers';
+        if (rec.type?.includes('CHURN') || rec.type?.includes('HEALTH_AT_RISK')) {
+          audienceName = 'Inactive Customers';
+        } else if (rec.type?.includes('REVENUE')) {
+          audienceName = 'High Value Customers';
+        }
+
+        let revenue = '₹15,000';
+        if (rec.type?.includes('CHURN')) revenue = '₹18,500';
+        else if (rec.type?.includes('REVENUE')) {
+          const match = rec.description.match(/₹([\d.]+)L/);
+          if (match) {
+            revenue = `₹${match[1]}L`;
+          } else {
+            revenue = '₹24,600';
+          }
+        } else if (rec.type?.includes('BIRTHDAY') || rec.type?.includes('BIRTHDAY_WEEK')) {
+          revenue = '₹12,400';
+        }
+
+        return {
+          id: rec.id || `opp-${index}`,
+          title: rec.title || 'Opportunity Alert',
+          description: rec.description,
+          actionLabel: 'Suggested Action',
+          actionValue: rec.action || 'Launch Campaign',
+          revenueLabel: rec.type?.includes('CHURN') || rec.type?.includes('HEALTH_AT_RISK') ? 'Potential Recovery' : 'Expected Revenue',
+          revenue,
+          image,
+          path: rec.path || '/campaigns',
+          state: rec.state || { prompt: `Draft a campaign targeting ${audienceName}` }
+        };
+      })
+    : [];
+
+  if (!opportunities || opportunities.length === 0) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center space-x-3 border-b border-[#B08D57]/20 pb-2">
+          <h2 className="text-xl font-serif text-[#F5F1EA] tracking-wide">Today's Opportunities</h2>
+          <span className="text-xs text-[#B08D57]/65 tracking-widest font-mono">/ CRITICAL ACTIONS</span>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {[1, 2, 3].map((n) => (
+            <div 
+              key={n}
+              className="h-[360px] rounded-2xl border border-[#B08D57]/10 bg-gradient-to-b from-[#161619]/40 to-[#0B0B0D]/40 animate-pulse flex flex-col justify-end p-6"
+            >
+              <div className="space-y-3">
+                <div className="h-4 w-1/3 bg-[#B08D57]/10 rounded" />
+                <div className="h-6 w-3/4 bg-[#F5F1EA]/10 rounded" />
+                <div className="h-3 w-5/6 bg-[#F5F1EA]/5 rounded" />
+                <div className="h-3 w-4/6 bg-[#F5F1EA]/5 rounded" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

@@ -221,6 +221,76 @@ async function getAudienceRecommendations() {
 }
 
 /**
+ * Evaluates the historical campaign performance to recommend budget scaling.
+ */
+async function getCampaignPerformanceRecommendations() {
+  try {
+    const Campaign = require('../../models/Campaign');
+    const campaigns = await Campaign.find({ status: 'Sent' }).lean();
+    if (campaigns.length === 0) return [];
+
+    const recommendations = [];
+
+    // Rule 1: Recommend scaling WhatsApp budget if WhatsApp CTR > average CTR of other channels
+    const waCampaigns = campaigns.filter(c => c.channel === 'WhatsApp');
+    const nonWaCampaigns = campaigns.filter(c => c.channel !== 'WhatsApp');
+    
+    if (waCampaigns.length > 0 && nonWaCampaigns.length > 0) {
+      const waAvgCtr = waCampaigns.reduce((sum, c) => sum + (c.clickRate || 0), 0) / waCampaigns.length;
+      const nonWaAvgCtr = nonWaCampaigns.reduce((sum, c) => sum + (c.clickRate || 0), 0) / nonWaCampaigns.length;
+      
+      if (waAvgCtr > nonWaAvgCtr) {
+        recommendations.push({
+          id: "scale-whatsapp-budget",
+          type: "CHANNEL",
+          priority: "MEDIUM",
+          title: "Scale WhatsApp Budget",
+          description: `WhatsApp CTR averages ${waAvgCtr.toFixed(1)}%, outperforming other channels. Increase budget allocation.`,
+          action: "Increase WhatsApp Spend",
+          path: "/campaigns",
+          state: { prompt: "Draft a high-conversion WhatsApp promo campaign for Delhi customers" }
+        });
+      }
+    }
+
+    // Rule 2: Recommend VIP repeat-sales if VIP ROI is high (> 3.0)
+    const vipCampaign = campaigns.find(c => c.audienceName === 'High Value Customers' && (c.roi || 0) > 3.0);
+    if (vipCampaign) {
+      recommendations.push({
+        id: "scale-vip-conversions",
+        type: "REVENUE",
+        priority: "HIGH",
+        title: "Scale VIP Conversions",
+        description: `The VIP Win-Back campaign delivered a premium ${(vipCampaign.roi || 0).toFixed(1)}x ROI. Scale high-value targeting.`,
+        action: "Launch VIP Repeat Promo",
+        path: "/campaigns",
+        state: { prompt: "Draft a premium loyalty reward campaign for VIP Customers to trigger purchases" }
+      });
+    }
+
+    // Rule 3: Recommend scaling Birthday rewards if Birthday Rewards Campaign ROI is high
+    const bdayCampaign = campaigns.find(c => c.title.includes('Birthday') || c.campaignName.includes('Birthday'));
+    if (bdayCampaign && (bdayCampaign.roi || 0) > 2.0) {
+      recommendations.push({
+        id: "scale-birthday-rewards",
+        type: "CAMPAIGN",
+        priority: "HIGH",
+        title: "Scale Birthday Rewards",
+        description: `Birthday rewards achieve ${(bdayCampaign.roi || 0).toFixed(1)}x ROI. Automate triggers to cover all upcoming birthdays.`,
+        action: "Scale Birthday Triggers",
+        path: "/campaigns",
+        state: { prompt: "Create a Birthday Rewards Campaign for upcoming customer birthdays this week" }
+      });
+    }
+
+    return recommendations;
+  } catch (error) {
+    console.error('[Recommendation Engine] Failed to get performance recommendations:', error);
+    return [];
+  }
+}
+
+/**
  * Aggregates all recommendation channels into a single list.
  * @returns {Promise<Array<object>>}
  */
@@ -231,6 +301,7 @@ async function generateRecommendations() {
     const channel = await getChannelRecommendations();
     const city = await getCityRecommendations();
     const audience = await getAudienceRecommendations();
+    const performance = await getCampaignPerformanceRecommendations();
     
     // Fetch live birthday recommendations
     const birthdayService = require('./birthdayRecommendationService');
@@ -248,7 +319,8 @@ async function generateRecommendations() {
       ...revenue,
       ...channel,
       ...city,
-      ...audience
+      ...audience,
+      ...performance
     ].filter(Boolean);
 
     // Sort by priority order: HIGH > MEDIUM > LOW
@@ -277,5 +349,6 @@ module.exports = {
   getChannelRecommendations,
   getCityRecommendations,
   getAudienceRecommendations,
+  getCampaignPerformanceRecommendations,
   generateRecommendations
 };

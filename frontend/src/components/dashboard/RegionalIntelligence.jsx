@@ -1,37 +1,106 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import { MapPin, TrendingUp, DollarSign, AlertTriangle, Star } from 'lucide-react';
 
+const API_BASE_URL = 'http://localhost:5000/api';
+
 const RegionalIntelligence = () => {
-  const highlights = [
-    {
-      label: 'Best Performing City',
-      city: 'Bangalore',
-      icon: Star,
-      color: 'text-emerald-500',
-      bgColor: 'bg-emerald-500/10'
-    },
-    {
-      label: 'Fastest Growing City',
-      city: 'Pune',
-      icon: TrendingUp,
-      color: 'text-amber-500',
-      bgColor: 'bg-amber-500/10'
-    },
-    {
-      label: 'Highest Revenue City',
-      city: 'Delhi',
-      icon: DollarSign,
-      color: 'text-emerald-400',
-      bgColor: 'bg-emerald-400/10'
-    },
-    {
-      label: 'Highest Churn City',
-      city: 'Mumbai',
-      icon: AlertTriangle,
-      color: 'text-rose-500',
-      bgColor: 'bg-rose-500/10'
-    }
-  ];
+  const [highlights, setHighlights] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchCityAnalytics = async () => {
+      try {
+        const res = await axios.get(`${API_BASE_URL}/analytics/cities`);
+        if (res.data && res.data.length > 0) {
+          const cityData = res.data;
+
+          let bestCity = 'Bangalore';
+          let fastestCity = 'Pune';
+          let highestRevCity = 'Delhi';
+          let highestChurnCity = 'Mumbai';
+
+          // Best performing (highest campaignEngagement)
+          const sortedByEngagement = [...cityData].sort((a, b) => b.campaignEngagement - a.campaignEngagement);
+          if (sortedByEngagement[0] && sortedByEngagement[0].campaignEngagement > 0) {
+            bestCity = sortedByEngagement[0].city;
+          } else {
+            const sortedByCustomers = [...cityData].sort((a, b) => b.customers - a.customers);
+            bestCity = sortedByCustomers[0]?.city || 'Bangalore';
+          }
+
+          // Highest revenue
+          const sortedByRevenue = [...cityData].sort((a, b) => b.revenue - a.revenue);
+          if (sortedByRevenue[0]) {
+            highestRevCity = sortedByRevenue[0].city;
+          }
+
+          // Fastest growing: sorting by total number of customers
+          const sortedByCustomers = [...cityData].sort((a, b) => b.customers - a.customers);
+          if (sortedByCustomers[0]) {
+            const found = sortedByCustomers.find(c => c.city !== highestRevCity);
+            fastestCity = found ? found.city : sortedByCustomers[0].city;
+          }
+
+          // Highest churn (highest inactiveRate)
+          const sortedByChurn = [...cityData].sort((a, b) => b.inactiveRate - a.inactiveRate);
+          if (sortedByChurn[0]) {
+            highestChurnCity = sortedByChurn[0].city;
+          }
+
+          setHighlights([
+            {
+              label: 'Best Performing City',
+              city: bestCity,
+              icon: Star,
+              color: 'text-emerald-500',
+              bgColor: 'bg-emerald-500/10'
+            },
+            {
+              label: 'Fastest Growing City',
+              city: fastestCity,
+              icon: TrendingUp,
+              color: 'text-amber-500',
+              bgColor: 'bg-amber-500/10'
+            },
+            {
+              label: 'Highest Revenue City',
+              city: highestRevCity,
+              icon: DollarSign,
+              color: 'text-emerald-400',
+              bgColor: 'bg-emerald-400/10'
+            },
+            {
+              label: 'Highest Churn City',
+              city: highestChurnCity,
+              icon: AlertTriangle,
+              color: 'text-rose-500',
+              bgColor: 'bg-rose-500/10'
+            }
+          ]);
+        }
+      } catch (error) {
+        console.warn('[Regional Intelligence Sync] Error fetching city analytics:', error.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCityAnalytics();
+  }, []);
+
+  if (loading || highlights.length === 0) {
+    return (
+      <div className="w-full rounded-2xl border border-[#B08D57]/15 bg-gradient-to-br from-[#161619] to-[#0B0B0D] p-6 lg:p-8 shadow-xl flex flex-col md:flex-row gap-6 items-center">
+        <div className="w-[180px] h-[220px] bg-[#0B0B0D]/40 rounded-xl border border-[#B08D57]/10 animate-pulse flex items-center justify-center shrink-0" />
+        <div className="flex-1 w-full space-y-3">
+          {[1, 2, 3, 4].map(n => (
+            <div key={n} className="h-10 rounded-xl border border-[#B08D57]/5 bg-[#0B0B0D]/60 animate-pulse" />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full rounded-2xl border border-[#B08D57]/15 bg-gradient-to-br from-[#161619] to-[#0B0B0D] p-6 lg:p-8 shadow-xl flex flex-col md:flex-row gap-6 items-center">
