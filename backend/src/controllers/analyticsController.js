@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const Campaign = require('../models/Campaign');
 const Communication = require('../models/Communication');
 const excelParser = require('../services/excelParser');
@@ -55,21 +56,95 @@ async function getOverview(req, res) {
  */
 async function getCampaignsAnalytics(req, res) {
   try {
-    const campaigns = await Campaign.find().sort({ createdAt: -1 });
-    const results = [];
+    if (mongoose.connection.readyState !== 1) {
+      return res.status(503).json({ 
+        error: "MongoDB connection is offline. Please ensure your IP is whitelisted in MongoDB Atlas Network Access." 
+      });
+    }
 
-    for (const c of campaigns) {
-      const stats = await campaignAnalyticsService.getCampaignAnalytics(c._id);
-      results.push({
-        id: c._id.toString(),
+    const campaigns = await Campaign.find().sort({ createdAt: -1 }).lean();
+
+    // Use MongoDB aggregation to fetch stats for all campaigns in a single query (preventing N+1 queries)
+    const Communication = require('../models/Communication');
+    const stats = await Communication.aggregate([
+      {
+        $group: {
+          _id: '$campaignId',
+          sent: { $sum: 1 },
+          failed: {
+            $sum: {
+              $cond: [{ $eq: ['$status', 'FAILED'] }, 1, 0]
+            }
+          },
+          delivered: {
+            $sum: {
+              $cond: [{ $ne: ['$deliveredAt', null] }, 1, 0]
+            }
+          },
+          opened: {
+            $sum: {
+              $cond: [{ $ne: ['$openedAt', null] }, 1, 0]
+            }
+          },
+          clicked: {
+            $sum: {
+              $cond: [{ $ne: ['$clickedAt', null] }, 1, 0]
+            }
+          },
+          purchased: {
+            $sum: {
+              $cond: [{ $ne: ['$purchasedAt', null] }, 1, 0]
+            }
+          }
+        }
+      }
+    ]);
+
+    const statsMap = {};
+    stats.forEach(s => {
+      const deliveryRate = s.sent > 0 ? Math.round((s.delivered / s.sent) * 100 * 10) / 10 : 0;
+      const openRate = s.delivered > 0 ? Math.round((s.opened / s.delivered) * 100 * 10) / 10 : 0;
+      const clickRate = s.opened > 0 ? Math.round((s.clicked / s.opened) * 100 * 10) / 10 : 0;
+      const purchaseRate = s.clicked > 0 ? Math.round((s.purchased / s.clicked) * 100 * 10) / 10 : 0;
+
+      statsMap[s._id.toString()] = {
+        sent: s.sent,
+        delivered: s.delivered,
+        failed: s.failed,
+        opened: s.opened,
+        clicked: s.clicked,
+        purchased: s.purchased,
+        deliveryRate,
+        openRate,
+        clickRate,
+        purchaseRate
+      };
+    });
+
+    const results = campaigns.map(c => {
+      const cId = c._id.toString();
+      const campaignStats = statsMap[cId] || {
+        sent: 0,
+        delivered: 0,
+        failed: 0,
+        opened: 0,
+        clicked: 0,
+        purchased: 0,
+        deliveryRate: 0,
+        openRate: 0,
+        clickRate: 0,
+        purchaseRate: 0
+      };
+      return {
+        id: cId,
         title: c.title,
         audienceName: c.audienceName,
         channel: c.channel,
         status: c.status,
         createdAt: c.createdAt,
-        ...stats
-      });
-    }
+        ...campaignStats
+      };
+    });
 
     res.json(results);
   } catch (error) {

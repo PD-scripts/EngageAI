@@ -2,14 +2,14 @@ const customerGenerator = require('./customerGenerator');
 const customerIngestionService = require('./customerIngestionService');
 
 function start() {
-  const INTERVAL_MS = 1800000; // 30 minutes (1,800,000 ms)
+  const INTERVAL_MS = 12 * 60 * 60 * 1000; // 12 hours (43,200,000 ms)
   
-  console.log('[Ingestion Scheduler] Automated customer ingestion scheduler started (Interval: 30m).');
+  console.log('[Ingestion Scheduler] Automated customer ingestion scheduler started (Interval: 12h).');
   
   setInterval(async () => {
     try {
-      // Generate between 1 and 3 customers on every tick
-      const count = Math.floor(Math.random() * 3) + 1; 
+      // Generate between 10 and 20 customers on every tick
+      const count = Math.floor(Math.random() * (20 - 10 + 1)) + 10; 
       console.log(`[Ingestion Scheduler] Scheduled tick. Generating ${count} realistic customer signups...`);
       
       for (let i = 0; i < count; i++) {
