@@ -49,6 +49,10 @@ const CustomerSchema = new mongoose.Schema({
   healthScore: {
     type: Number,
     default: 0
+  },
+  source: {
+    type: String,
+    default: 'import'
   }
 }, {
   timestamps: true

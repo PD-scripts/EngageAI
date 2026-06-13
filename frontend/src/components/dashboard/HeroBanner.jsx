@@ -8,7 +8,7 @@ import RotatingInsights from './RotatingInsights';
 import coffeeBeansDeco from '../../assets/coffee_beans_deco.png';
 import coffeeVideo from '../../assets/videos/coffee-hero.mp4';
 
-const HeroBanner = ({ recommendations }) => {
+const HeroBanner = ({ recommendations, stats }) => {
   const [coords, setCoords] = useState({ x: 0, y: 0 });
   const [currentStep, setCurrentStep] = useState(0);
 
@@ -176,8 +176,37 @@ const HeroBanner = ({ recommendations }) => {
         </div>
       </div>
 
-      {/* Right side is kept empty on desktop to display the gorgeous coffee pour video context */}
-      <div className="hidden lg:block lg:w-[320px] h-full pointer-events-none" />
+      {/* Right side: Clean text stats overlaying the video background */}
+      <div className="relative z-10 flex flex-row lg:flex-col items-center lg:items-end justify-between lg:justify-center gap-8 lg:gap-6 text-[#F5F1EA] w-full lg:w-auto mt-8 lg:mt-0 border-t lg:border-t-0 border-[#B08D57]/15 pt-6 lg:pt-0">
+        <div className="space-y-0.5 text-left lg:text-right">
+          <span 
+            style={{ textShadow: '0 2px 8px rgba(0,0,0,0.6)' }}
+            className="text-[10px] font-mono font-bold text-[#B08D57] uppercase tracking-widest block"
+          >
+            Total Customers
+          </span>
+          <span 
+            style={{ textShadow: '0 2px 16px rgba(0,0,0,0.7)' }}
+            className="text-3xl lg:text-5xl font-serif font-light tracking-tight block text-transparent bg-clip-text bg-gradient-to-r from-[#F5F1EA] via-[#EAE6DF] to-[#B08D57]"
+          >
+            {Number(stats?.totalCustomers || 0).toLocaleString()}
+          </span>
+        </div>
+        <div className="space-y-0.5 text-right">
+          <span 
+            style={{ textShadow: '0 2px 8px rgba(0,0,0,0.6)' }}
+            className="text-[10px] font-mono font-bold text-[#B08D57] uppercase tracking-widest block"
+          >
+            New Customers Today
+          </span>
+          <span 
+            style={{ textShadow: '0 2px 16px rgba(0,0,0,0.7)' }}
+            className="text-3xl lg:text-5xl font-serif font-light tracking-tight block text-[#B08D57]"
+          >
+            +{Number(stats?.newCustomersToday || 0).toLocaleString()}
+          </span>
+        </div>
+      </div>
     </div>
   );
 };

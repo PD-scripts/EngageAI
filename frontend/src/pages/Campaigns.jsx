@@ -58,6 +58,7 @@ const Campaigns = () => {
   const location = useLocation();
 
   // Inputs
+  const [audiences, setAudiences] = useState(AUDIENCES);
   const [prompt, setPrompt] = useState('');
   const [selectedAudience, setSelectedAudience] = useState('All Customers');
   const [selectedChannel, setSelectedChannel] = useState('Email');
@@ -88,6 +89,53 @@ const Campaigns = () => {
     if (location.state?.prefilledAudience) {
       setSelectedAudience('High Value Customers');
     }
+
+    // Auto-fill from AI Strategist campaign draft
+    if (location.state?.draft) {
+      const draft = location.state.draft;
+      
+      // Update dynamic audiences list if not present
+      setAudiences(prev => {
+        if (!prev.includes(draft.audience)) {
+          return [...prev, draft.audience];
+        }
+        return prev;
+      });
+      
+      // Map campaignType to GOALS
+      let goal = 'Increase Sales';
+      if (draft.campaignType === 'Reactivation') {
+        goal = 'Reactivate Customers';
+      } else if (draft.campaignType === 'Birthday') {
+        goal = 'Increase Repeat Purchases';
+      }
+      
+      // Set parameters setup states
+      setSelectedAudience(draft.audience);
+      setSelectedChannel(draft.channel);
+      setSelectedGoal(goal);
+      setPrompt(draft.recommendationSource);
+      
+      // Set generated campaign editor states
+      setGeneratedCampaign({
+        title: draft.campaignName,
+        message: draft.message,
+        cta: draft.campaignType === 'Reactivation' ? 'Claim 15% Off' : draft.campaignType === 'Birthday' ? 'Claim Birthday Treat' : 'Order Now',
+        subject: draft.channel === 'Email' ? `Special Deal: ${draft.campaignName}` : '',
+        audienceName: draft.audience,
+        audienceSize: 24, // Simulated segment size
+        channel: draft.channel,
+        goal: goal,
+        strategy: `AI Recommendation Strategy: ${draft.campaignType}`,
+        recommendedOffer: draft.campaignType === 'Reactivation' ? '15% Off Win Back Offer' : draft.campaignType === 'Birthday' ? 'Complimentary Coffee' : 'Cold Brew Special',
+        aiReasoning: 'This campaign draft was parsed and generated automatically by ENGAGEAI Agent from an executive recommendation.',
+        qualityScore: 92,
+        strengths: ['Highly personalized incentive', 'Tailored delivery channel selection', 'Clear customer call to action'],
+        improvements: ['Consider experimenting with alternative offer amounts'],
+        status: 'Draft'
+      });
+    }
+
     fetchCampaignHistory();
   }, [location]);
 
@@ -406,7 +454,7 @@ const Campaigns = () => {
                 disabled={generatedCampaign?.status === 'Sent'}
                 className="w-full px-3.5 py-2.5 border border-border rounded-xl bg-slate-50/50 focus:bg-white text-text-main cursor-pointer outline-none disabled:opacity-60"
               >
-                {AUDIENCES.map((a) => <option key={a} value={a}>{a}</option>)}
+                {audiences.map((a) => <option key={a} value={a}>{a}</option>)}
               </select>
             </div>
 

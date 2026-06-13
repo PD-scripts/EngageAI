@@ -24,6 +24,7 @@ const Dashboard = () => {
     campaigns: []
   });
   const [recommendations, setRecommendations] = useState([]);
+  const [customerStats, setCustomerStats] = useState({ totalCustomers: 0, newCustomersToday: 0 });
   const [loading, setLoading] = useState(true);
   const [analyticsLoading, setAnalyticsLoading] = useState(true);
 
@@ -44,11 +45,12 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        const [custRes, campRes, analyticsRes, recsRes] = await Promise.all([
+        const [custRes, campRes, analyticsRes, recsRes, statsRes] = await Promise.all([
           axios.get(`${API_BASE_URL}/customers?limit=250`),
           axios.get(`${API_BASE_URL}/campaigns`),
           axios.get(`${API_BASE_URL}/campaigns/analytics`),
-          axios.get(`${API_BASE_URL}/recommendations`)
+          axios.get(`${API_BASE_URL}/recommendations`),
+          axios.get(`${API_BASE_URL}/customers/stats`)
         ]);
 
         if (custRes.data && custRes.data.customers) {
@@ -63,15 +65,23 @@ const Dashboard = () => {
         if (recsRes.data && recsRes.data.recommendations) {
           setRecommendations(recsRes.data.recommendations);
         }
+        if (statsRes.data) {
+          setCustomerStats(statsRes.data);
+        }
       } catch (error) {
         console.warn('[Dashboard Data Sync] Backend offline or fetch error:', error.message);
-      } finally {
-        setLoading(false);
-        setAnalyticsLoading(false);
       }
     };
 
     fetchDashboardData();
+
+    // Reduce loader display time to exactly 1 second (1000ms) for high-speed feel
+    const timer = setTimeout(() => {
+      setLoading(false);
+      setAnalyticsLoading(false);
+    }, 1000);
+
+    return () => clearTimeout(timer);
   }, []);
 
   return (
@@ -87,7 +97,7 @@ const Dashboard = () => {
       ) : (
         <DashboardLayout>
           {/* Section 1: Cinematic Hero Section */}
-          <HeroBanner recommendations={recommendations} />
+          <HeroBanner recommendations={recommendations} stats={customerStats} />
 
           {/* Section 1.5: Campaign Performance Analytics Hub */}
           <CampaignAnalyticsHub 
@@ -115,6 +125,19 @@ const Dashboard = () => {
             </div>
 
           </div>
+
+          {/* Section 7: Footer */}
+          <footer className="mt-16 pt-8 border-t border-[#B08D57]/15 flex flex-col md:flex-row items-center justify-between text-[#F5F1EA]/50 text-xs font-sans">
+            <div className="flex items-center space-x-2">
+              <span className="font-serif italic font-semibold text-[#B08D57]">ENGAGEAI</span>
+              <span>&copy; {new Date().getFullYear()} All Rights Reserved.</span>
+            </div>
+            <div className="flex space-x-6 mt-4 md:mt-0 font-mono uppercase tracking-widest text-[10px]">
+              <a href="#privacy" className="hover:text-[#B08D57] transition-colors">Privacy Policy</a>
+              <a href="#terms" className="hover:text-[#B08D57] transition-colors">Terms of Service</a>
+              <a href="#status" className="hover:text-[#B08D57] transition-colors">System Status</a>
+            </div>
+          </footer>
         </DashboardLayout>
       )}
     </div>
