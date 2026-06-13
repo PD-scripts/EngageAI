@@ -23,6 +23,7 @@ const backupRoutes = require('./routes/backupRoutes');
 const customerIngestionRoutes = require('./routes/customerIngestionRoutes');
 const ingestionScheduler = require('./services/customerIngestion/ingestionScheduler');
 const aiStrategistRoutes = require('./routes/aiStrategistRoutes');
+const channelRoutes = require('../channel-service/src/routes/channelRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -50,6 +51,7 @@ app.use('/api/weather', weatherRoutes);
 app.use('/api/backups', backupRoutes);
 app.use('/api/ingestion', customerIngestionRoutes);
 app.use('/api/ai-strategist', aiStrategistRoutes);
+app.use('/channel', channelRoutes);
 
 // Start server
 app.listen(PORT, () => {

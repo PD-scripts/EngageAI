@@ -305,7 +305,7 @@ async function sendCampaign(req, res) {
     const savedComms = await Communication.insertMany(commDocs);
 
     // 5. Fire Axios calls to Channel Service in the background
-    const channelServiceUrl = process.env.CHANNEL_SERVICE_URL || 'http://localhost:6000/channel/send';
+    const channelServiceUrl = process.env.CHANNEL_SERVICE_URL || 'http://localhost:5000/channel/send';
     
     const sendPromises = savedComms.map(comm => {
       return axios.post(channelServiceUrl, {
