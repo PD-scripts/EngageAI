@@ -3,7 +3,7 @@ import axios from 'axios';
 import { MapPin, TrendingUp, DollarSign, AlertTriangle, Star } from 'lucide-react';
 import statesData from './india_states.json';
 
-const API_BASE_URL = 'http://localhost:5000/api';
+import { API_BASE_URL } from '../../config/api';
 
 const RegionalIntelligence = () => {
   const [highlights, setHighlights] = useState([]);

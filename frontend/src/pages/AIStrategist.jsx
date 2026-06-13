@@ -13,7 +13,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 
-const API_BASE_URL = 'http://localhost:5000/api';
+import { API_BASE_URL } from '../config/api';
 
 const SUGGESTED_QUESTIONS = [
   "What should I do next?",

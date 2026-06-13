@@ -11,7 +11,7 @@ import RegionalIntelligence from '../components/dashboard/RegionalIntelligence';
 import CampaignPerformance from '../components/dashboard/CampaignPerformance';
 import CampaignAnalyticsHub from '../components/dashboard/CampaignAnalyticsHub';
 
-const API_BASE_URL = 'http://localhost:5000/api';
+import { API_BASE_URL } from '../config/api';
 
 const Dashboard = () => {
   const navigate = useNavigate();

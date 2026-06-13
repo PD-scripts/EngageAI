@@ -15,7 +15,7 @@ import {
   Activity
 } from 'lucide-react';
 
-const API_BASE_URL = 'http://localhost:5000/api';
+import { API_BASE_URL } from '../config/api';
 
 const CustomerDetails = () => {
   const { id } = useParams();
