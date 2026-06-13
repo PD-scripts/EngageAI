@@ -20,6 +20,9 @@ const strategistRoutes = require('./routes/strategistRoutes');
 const recommendationRoutes = require('./routes/recommendationRoutes');
 const weatherRoutes = require('./routes/weatherRoutes');
 const backupRoutes = require('./routes/backupRoutes');
+const customerIngestionRoutes = require('./routes/customerIngestionRoutes');
+const ingestionScheduler = require('./services/customerIngestion/ingestionScheduler');
+const aiStrategistRoutes = require('./routes/aiStrategistRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -45,9 +48,13 @@ app.use('/api/strategist', strategistRoutes);
 app.use('/api/recommendations', recommendationRoutes);
 app.use('/api/weather', weatherRoutes);
 app.use('/api/backups', backupRoutes);
+app.use('/api/ingestion', customerIngestionRoutes);
+app.use('/api/ai-strategist', aiStrategistRoutes);
 
 // Start server
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
+  // Start background customer ingestion scheduler
+  ingestionScheduler.start();
 });
 

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { MapPin, TrendingUp, DollarSign, AlertTriangle, Star } from 'lucide-react';
+import statesData from './india_states.json';
 
 const API_BASE_URL = 'http://localhost:5000/api';
 
@@ -106,43 +107,41 @@ const RegionalIntelligence = () => {
     <div className="w-full rounded-2xl border border-[#B08D57]/15 bg-gradient-to-br from-[#161619] to-[#0B0B0D] p-6 lg:p-8 shadow-xl flex flex-col md:flex-row gap-6 items-center">
       {/* SVG India Map Outline with Glowing Cities */}
       <div className="relative w-[180px] h-[220px] bg-[#0B0B0D]/40 rounded-xl p-3 border border-[#B08D57]/10 flex items-center justify-center overflow-hidden shrink-0">
-        {/* Minimal styled SVG of India */}
+        {/* Geographically accurate styled SVG of India */}
         <svg 
-          className="w-full h-full text-[#B08D57]/15" 
-          viewBox="0 0 200 240" 
+          className="w-full h-full text-[#B08D57]/5 hover:text-[#B08D57]/10 transition-colors duration-500" 
+          viewBox="0 0 612 696" 
           fill="currentColor" 
-          stroke="currentColor" 
+          stroke="#B08D57" 
           strokeWidth="0.5"
+          strokeOpacity="0.15"
         >
-          {/* Abstract geometric outline representing India's map */}
-          <path d="M 90,20 
-                   L 110,25 L 120,40 L 135,45 L 140,55 L 142,65 
-                   L 155,75 L 168,78 L 172,88 L 168,96 L 158,98 
-                   L 145,108 L 138,120 L 138,135 L 148,142 L 140,150 
-                   L 125,165 L 118,185 L 112,205 L 105,225 L 98,235 
-                   L 95,238 L 93,235 L 90,215 L 85,195 L 82,180 
-                   L 75,160 L 68,148 L 52,145 L 45,135 L 38,125 
-                   L 25,120 L 22,110 L 25,102 L 35,98 L 48,96 
-                   L 55,90 L 62,80 L 68,68 L 72,55 L 75,40 
-                   L 80,30 Z" 
-          />
+          {statesData.map((state) => (
+            <path 
+              key={state.id} 
+              id={state.id} 
+              title={state.name}
+              d={state.d} 
+              className="hover:fill-[#B08D57]/20 transition-all duration-300 cursor-pointer"
+            />
+          ))}
           
           {/* Pulse Animations for Cities */}
           {/* Delhi (North) */}
-          <circle cx="85" cy="65" r="3" fill="#B08D57" />
-          <circle cx="85" cy="65" r="7" fill="none" stroke="#B08D57" strokeWidth="0.5" className="animate-ping" />
+          <circle cx="187" cy="211" r="5" fill="#B08D57" />
+          <circle cx="187" cy="211" r="12" fill="none" stroke="#B08D57" strokeWidth="1" className="animate-ping" />
           
           {/* Mumbai (West) */}
-          <circle cx="58" cy="142" r="3" fill="#EF4444" />
-          <circle cx="58" cy="142" r="7" fill="none" stroke="#EF4444" strokeWidth="0.5" className="animate-ping" />
+          <circle cx="120" cy="430" r="5" fill="#EF4444" />
+          <circle cx="120" cy="430" r="12" fill="none" stroke="#EF4444" strokeWidth="1" className="animate-ping" />
           
           {/* Pune (West-ish) */}
-          <circle cx="68" cy="155" r="3" fill="#F59E0B" />
-          <circle cx="68" cy="155" r="7" fill="none" stroke="#F59E0B" strokeWidth="0.5" className="animate-ping" />
+          <circle cx="135" cy="445" r="5" fill="#F59E0B" />
+          <circle cx="135" cy="445" r="12" fill="none" stroke="#F59E0B" strokeWidth="1" className="animate-ping" />
           
           {/* Bangalore (South) */}
-          <circle cx="88" cy="192" r="3" fill="#10B981" />
-          <circle cx="88" cy="192" r="7" fill="none" stroke="#10B981" strokeWidth="0.5" className="animate-ping" />
+          <circle cx="195" cy="565" r="5" fill="#10B981" />
+          <circle cx="195" cy="565" r="12" fill="none" stroke="#10B981" strokeWidth="1" className="animate-ping" />
         </svg>
 
         {/* Floating City Labels inside the Map box */}

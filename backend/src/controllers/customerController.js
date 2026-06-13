@@ -112,8 +112,35 @@ async function importCustomers(req, res) {
   }
 }
 
+/**
+ * GET /api/customers/stats
+ * Retrieves total number of customers and new customers added today.
+ */
+async function getCustomerStats(req, res) {
+  try {
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+
+    const totalCustomers = await Customer.countDocuments();
+    const newCustomersToday = await Customer.countDocuments({
+      source: 'ingestion',
+      createdAt: { $gte: startOfToday }
+    });
+
+    res.json({
+      totalCustomers,
+      newCustomersToday
+    });
+  } catch (error) {
+    console.error('Error in getCustomerStats controller:', error);
+    res.status(500).json({ message: "Internal Server Error fetching customer stats" });
+  }
+}
+
 module.exports = {
   getCustomers,
   getCustomerById,
-  importCustomers
+  importCustomers,
+  getCustomerStats
 };
+
